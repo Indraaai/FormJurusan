@@ -1,13 +1,13 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">Review Jawaban</h2>
+        <h2 class="font-semibold text-xl text-emerald-900 leading-tight">Review Jawaban</h2>
     </x-slot>
 
     <div class="py-8">
         <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
 
             @if (session('status'))
-                <div class="mb-4 bg-green-50 border border-green-200 text-green-800 rounded-lg p-3">
+                <div class="mb-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-lg p-3">
                     {{ session('status') }}
                 </div>
             @endif
@@ -31,14 +31,14 @@
                 $percent = 100; // di halaman review dianggap sudah 100%
             @endphp
             <div class="bg-white rounded-xl shadow-sm p-4 mb-6">
-                <div class="h-2 bg-gray-100 rounded">
-                    <div class="h-2 bg-indigo-600 rounded" style="width: {{ $percent }}%;"></div>
+                <div class="h-2 bg-emerald-100 rounded">
+                    <div class="h-2 bg-emerald-600 rounded transition-all" style="width: {{ $percent }}%;"></div>
                 </div>
-                <div class="text-sm text-gray-500 mt-2">Review sebelum kirim</div>
+                <div class="text-sm text-emerald-700/80 mt-2">Review sebelum kirim</div>
             </div>
 
             <div class="bg-white shadow-sm rounded-xl p-6">
-                <p class="text-gray-600 mb-6">
+                <p class="text-emerald-800/80 mb-6">
                     Silakan periksa ringkasan jawabanmu di bawah ini. Kamu masih bisa
                     <strong>mengubah jawaban</strong> dengan menekan tombol <em>Edit</em> pada section terkait.
                 </p>
@@ -55,18 +55,18 @@
                 @endphp
 
                 @forelse ($sections as $i => $section)
-                    <div class="border rounded-xl p-5 mb-6">
+                    <div class="border rounded-xl p-5 mb-6 border-emerald-100">
                         <div class="flex items-start justify-between gap-3">
                             <div>
-                                <div class="text-sm text-gray-500">Section {{ $section->position ?? $i + 1 }} dari
+                                <div class="text-sm text-emerald-700/70">Section {{ $section->position ?? $i + 1 }} dari
                                     {{ $total }}</div>
-                                <div class="font-semibold text-lg">{{ $section->title ?? 'Section' }}</div>
+                                <div class="font-semibold text-lg text-emerald-900">{{ $section->title ?? 'Section' }}</div>
                                 @if (!empty($section->description))
-                                    <div class="text-sm text-gray-500 mt-1">{{ $section->description }}</div>
+                                    <div class="text-sm text-emerald-700/70 mt-1">{{ $section->description }}</div>
                                 @endif
                             </div>
                             <a href="{{ route('forms.section', ['form' => $form->uid, 'pos' => $section->position]) }}"
-                                class="px-3 py-1.5 bg-white border rounded-lg text-sm">
+                                class="px-3 py-1.5 bg-white border border-emerald-200 rounded-lg text-sm text-emerald-800 hover:bg-emerald-50">
                                 Edit
                             </a>
                         </div>
@@ -94,23 +94,23 @@
                                 @endphp
 
                                 <div class="border-b pb-4 last:border-0 last:pb-0">
-                                    <div class="text-sm text-gray-500">
+                                    <div class="text-sm text-emerald-700/70">
                                         Q#{{ $q->position ?? '-' }} • {{ strtoupper(str_replace('_', ' ', $q->type)) }}
                                         @if ($q->required)
                                             <span class="text-red-600">*</span>
                                         @endif
                                     </div>
-                                    <div class="font-medium">{{ $q->title }}</div>
+                                    <div class="font-medium text-emerald-900">{{ $q->title }}</div>
                                     @if (!empty($q->description))
-                                        <div class="text-sm text-gray-500 mb-1">{{ $q->description }}</div>
+                                        <div class="text-sm text-emerald-700/70 mb-1">{{ $q->description }}</div>
                                     @endif
 
                                     {{-- renderer nilai --}}
-                                    <div class="mt-1 text-gray-800">
+                                    <div class="mt-1 text-emerald-900">
                                         @if ($grid->count())
                                             <div class="overflow-x-auto">
                                                 <table class="min-w-[400px] text-sm">
-                                                    <thead class="text-left text-gray-600">
+                                                    <thead class="text-left text-emerald-700">
                                                         <tr>
                                                             <th class="py-1 pr-4">Row</th>
                                                             <th class="py-1">Column</th>
@@ -136,26 +136,26 @@
                                         @elseif($file)
                                             <div class="text-sm">
                                                 <a href="{{ $file->url }}" target="_blank" rel="noopener"
-                                                    class="text-indigo-600 underline">
+                                                    class="text-emerald-700 underline">
                                                     {{ $file->original_name ?? basename($file->path) }}
                                                 </a>
-                                                <span class="text-gray-500">
+                                                <span class="text-emerald-700/70">
                                                     ({{ $file->mime ?? 'file' }},
                                                     {{ number_format(($file->size_kb ?? 0) / 1024, 2) }} MB)
                                                 </span>
                                             </div>
                                         @else
-                                            <div class="text-gray-800">{{ $value ?? '—' }}</div>
+                                            <div class="text-emerald-900">{{ $value ?? '—' }}</div>
                                         @endif
                                     </div>
                                 </div>
                             @empty
-                                <div class="text-gray-500">Tidak ada pertanyaan pada section ini.</div>
+                                <div class="text-emerald-700/70">Tidak ada pertanyaan pada section ini.</div>
                             @endforelse
                         </div>
                     </div>
                 @empty
-                    <p class="text-gray-600">Form ini belum memiliki section.</p>
+                    <p class="text-emerald-800/80">Form ini belum memiliki section.</p>
                 @endforelse
 
                 {{-- Actions --}}
@@ -175,18 +175,18 @@
                             </a>
                         @endif
 
-                        <button type="submit" 
+                        <button type="submit"
                             onclick="return confirm('⚠️ Kirim jawaban sekarang?\n\nSetelah dikirim, jawaban tidak dapat diubah lagi.')"
-                            class="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow-sm transition flex items-center gap-2">
+                            class="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg shadow-sm transition flex items-center gap-2">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                                 <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
                             </svg>
                             Kirim Jawaban
                         </button>
                     </div>
-                    
+
                     {{-- Helper text --}}
-                    <p class="text-sm text-gray-500 mt-4 text-center">
+                    <p class="text-sm text-emerald-700/70 mt-4 text-center">
                         💡 Pastikan semua jawaban sudah benar sebelum mengirim. Kamu bisa edit dengan klik tombol "Edit" di setiap section.
                     </p>
                 </form>

@@ -100,12 +100,18 @@ class FormController extends Controller
             'sections' => function ($query) {
                 $query->orderBy('position')->with('questions');
             },
+            // BUG-016 FIX: Limit responses eager load to prevent memory exhaustion
             'responses' => function ($query) {
-                $query->latest()->with(['respondent:id,name', 'answers.question:id,title']);
+                $query->latest()
+                    ->take(50)
+                    ->with(['respondent:id,name', 'answers.question:id,title']);
             }
         ];
 
         $form = $this->formRepository->findWithRelations($form->id, $relations);
+
+        // BUG-016 FIX: Tambahkan total response count untuk ditampilkan di UI
+        $form->loadCount('responses');
 
         return view('admin.forms.show', compact('form'));
     }

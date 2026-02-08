@@ -20,6 +20,7 @@ use App\Http\Controllers\Respondent\StartController;
 use App\Http\Controllers\Respondent\SectionController as RespondentSectionController;
 use App\Http\Controllers\Respondent\SubmitController;
 use App\Http\Controllers\Respondent\MyFormsController;
+use App\Http\Controllers\MediaDownloadController;
 
 
 // ====== Landing / umum ======
@@ -43,6 +44,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    // ====== Media Download (file dari local disk) ======
+    Route::get('/media/{media}/download', [MediaDownloadController::class, 'show'])
+        ->name('media.download');
 });
 
 // ====== Admin Area ======

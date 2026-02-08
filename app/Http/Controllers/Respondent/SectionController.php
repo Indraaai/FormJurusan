@@ -121,21 +121,25 @@ class SectionController extends Controller
             }
         }
 
-        // Debug: Log validation rules
-        Log::debug('Section save validation', [
-            'form_id' => $form->id,
-            'section_id' => $section->id,
-            'response_id' => $resp->id,
-            'rules' => $rules,
-            'request_all' => $request->all(),
-        ]);
+        // BUG-013 FIX: Only log sensitive request data in local environment
+        if (app()->environment('local')) {
+            Log::debug('Section save validation', [
+                'form_id' => $form->id,
+                'section_id' => $section->id,
+                'response_id' => $resp->id,
+                'rules' => $rules,
+                'request_all' => $request->all(),
+            ]);
+        }
 
         $validated = $request->validate($rules, $messages);
 
-        // Debug: Log validated data
-        Log::debug('Validation passed', [
-            'validated_data_keys' => array_keys($validated),
-        ]);
+        // BUG-013 FIX: Only log in local environment
+        if (app()->environment('local')) {
+            Log::debug('Validation passed', [
+                'validated_data_keys' => array_keys($validated),
+            ]);
+        }
 
         // Simpan jawaban
         try {
@@ -166,8 +170,8 @@ class SectionController extends Controller
                 ->with('status', 'Jawaban disimpan. Silakan review sebelum kirim.');
         }
 
-        // Next section?
-        $next = $this->nav->next($form, $section);
+        // Next section? (BUG-006 FIX: pass response for branching logic evaluation)
+        $next = $this->nav->next($form, $section, $resp);
         if ($next) {
             return to_route('forms.section', ['form' => $form->uid, 'pos' => $next->position])
                 ->with('status', 'Jawaban tersimpan.');

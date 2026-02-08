@@ -10,6 +10,9 @@ class Question extends Model
     public const TYPES = [
         'short_text',
         'long_text',
+        'number',        // BUG-014 FIX: Tambahkan tipe yang dipakai di view
+        'email',         // BUG-014 FIX: Tambahkan tipe yang dipakai di view
+        'url',           // BUG-014 FIX: Tambahkan tipe yang dipakai di view
         'multiple_choice',
         'checkboxes',
         'dropdown',
@@ -19,6 +22,7 @@ class Question extends Model
         'checkbox_grid',
         'date',
         'time',
+        'datetime',      // BUG-014 FIX: Tambahkan tipe yang dipakai di view
     ];
 
     protected $fillable = [

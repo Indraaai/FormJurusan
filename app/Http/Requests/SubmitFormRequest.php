@@ -48,19 +48,25 @@ class SubmitFormRequest extends FormRequest
         $form = $this->route('form');
         $user = $this->user();
 
+        // BUG-004 FIX: Explicitly filter for draft status only
         $response = FormResponse::where('form_id', $form->id)
             ->where('respondent_user_id', $user->id)
+            ->where('status', 'draft')
             ->latest('id')
             ->first();
 
         if (!$response) {
-            $validator->errors()->add('response', 'Draft response tidak ditemukan.');
-            return;
-        }
+            // Check if already submitted to give better error message
+            $hasSubmitted = FormResponse::where('form_id', $form->id)
+                ->where('respondent_user_id', $user->id)
+                ->where('status', 'submitted')
+                ->exists();
 
-        // Validate status is draft
-        if ($response->status === 'submitted') {
-            $validator->errors()->add('response', 'Respons ini sudah dikirim sebelumnya.');
+            if ($hasSubmitted) {
+                $validator->errors()->add('response', 'Respons ini sudah dikirim sebelumnya.');
+            } else {
+                $validator->errors()->add('response', 'Draft response tidak ditemukan. Silakan mulai mengisi form terlebih dahulu.');
+            }
             return;
         }
 
@@ -106,14 +112,16 @@ class SubmitFormRequest extends FormRequest
             return; // No required questions
         }
 
-        // Debug: Log required questions
-        Log::debug('Required questions for form submission', [
-            'form_id' => $form->id,
-            'user_id' => $user->id,
-            'response_id' => $response->id,
-            'required_question_ids' => $requiredQuestions->keys()->toArray(),
-            'required_question_titles' => $requiredQuestions->values()->toArray(),
-        ]);
+        // BUG-013 FIX: Only log sensitive data in local environment
+        if (app()->environment('local')) {
+            Log::debug('Required questions for form submission', [
+                'form_id' => $form->id,
+                'user_id' => $user->id,
+                'response_id' => $response->id,
+                'required_question_ids' => $requiredQuestions->keys()->toArray(),
+                'required_question_titles' => $requiredQuestions->values()->toArray(),
+            ]);
+        }
 
         // Get all answered questions (with non-null values)
         $answeredQuestions = FormAnswer::where('response_id', $response->id)
@@ -142,21 +150,25 @@ class SubmitFormRequest extends FormRequest
             ->pluck('question_id')
             ->all();
 
-        // Debug: Log answered questions
-        Log::debug('Answered questions check', [
-            'response_id' => $response->id,
-            'answered_question_ids' => $answeredQuestions,
-            'total_answers_in_response' => FormAnswer::where('response_id', $response->id)->count(),
-        ]);
+        // BUG-013 FIX: Only log sensitive data in local environment
+        if (app()->environment('local')) {
+            Log::debug('Answered questions check', [
+                'response_id' => $response->id,
+                'answered_question_ids' => $answeredQuestions,
+                'total_answers_in_response' => FormAnswer::where('response_id', $response->id)->count(),
+            ]);
+        }
 
-        // Debug: Show all answers in response
-        $allAnswers = FormAnswer::where('response_id', $response->id)
-            ->with('selectedOptions')
-            ->select('id', 'question_id', 'text_value', 'long_text_value', 'number_value', 'option_id')
-            ->get();
-        Log::debug('All answers in response', [
-            'answers' => $allAnswers->toArray(),
-        ]);
+        // BUG-013 FIX: Only log sensitive data in local environment
+        if (app()->environment('local')) {
+            $allAnswers = FormAnswer::where('response_id', $response->id)
+                ->with('selectedOptions')
+                ->select('id', 'question_id', 'text_value', 'long_text_value', 'number_value', 'option_id')
+                ->get();
+            Log::debug('All answers in response', [
+                'answers' => $allAnswers->toArray(),
+            ]);
+        }
 
         // Find unanswered required questions
         $unansweredIds = $requiredQuestions->keys()->diff($answeredQuestions);
@@ -164,12 +176,14 @@ class SubmitFormRequest extends FormRequest
         if ($unansweredIds->isNotEmpty()) {
             $unansweredTitles = $requiredQuestions->only($unansweredIds)->values();
 
-            Log::warning('Unanswered required questions - DETAILED DEBUG', [
-                'required_questions_collection' => $requiredQuestions->toArray(),
-                'unanswered_ids_array' => $unansweredIds->toArray(),
-                'unanswered_titles' => $unansweredTitles->toArray(),
-                'unanswered_titles_implode' => $unansweredTitles->take(3)->implode(', '),
-            ]);
+            if (app()->environment('local')) {
+                Log::warning('Unanswered required questions - DETAILED DEBUG', [
+                    'required_questions_collection' => $requiredQuestions->toArray(),
+                    'unanswered_ids_array' => $unansweredIds->toArray(),
+                    'unanswered_titles' => $unansweredTitles->toArray(),
+                    'unanswered_titles_implode' => $unansweredTitles->take(3)->implode(', '),
+                ]);
+            }
 
             // Build error message with fallback to IDs if titles are empty
             $titlesList = $unansweredTitles->take(3)->implode(', ');

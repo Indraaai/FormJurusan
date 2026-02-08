@@ -14,25 +14,29 @@ class MyFormsController extends Controller
         $user = $r->user();
         $q    = trim((string)$r->query('q', ''));
 
-        $forms = \App\Models\Form::query()
+        // BUG-017 FIX: Move date filtering to SQL and use pagination
+        $forms = Form::query()
             ->where('is_published', true)
             ->when($q, fn($qq) => $qq->where('title', 'like', "%$q%"))
+            ->where(function ($query) {
+                // Filter start_at/end_at di SQL via settings relation
+                $query->whereDoesntHave('settings', function ($sq) {
+                    $sq->whereNotNull('start_at')
+                        ->where('start_at', '>', now());
+                })
+                    ->whereDoesntHave('settings', function ($sq) {
+                        $sq->whereNotNull('end_at')
+                            ->where('end_at', '<', now());
+                    });
+            })
             ->with('settings')
             ->withCount([
                 'responses as my_submitted_count' => fn($x) => $x->where('respondent_user_id', $user->id)->where('status', 'submitted'),
                 'responses as my_draft_count'     => fn($x) => $x->where('respondent_user_id', $user->id)->where('status', 'draft'),
             ])
             ->latest('id')
-            ->get()
-            ->filter(function ($form) {
-                $s = $form->settings;
-                $start = $s?->start_at ? \Carbon\Carbon::parse($s->start_at) : null;
-                $end   = $s?->end_at   ? \Carbon\Carbon::parse($s->end_at)   : null;
-
-                if ($start && now()->lt($start)) return false;
-                if ($end   && now()->gt($end))   return false;
-                return true;
-            });
+            ->paginate(12)
+            ->withQueryString();
 
         return view('respondent.forms.index', compact('forms'));
     }

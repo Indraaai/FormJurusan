@@ -26,11 +26,6 @@ return new class extends Migration
 
         Schema::table('form_responses', function (Blueprint $table) {
             $table->index(['form_id', 'created_at']);
-            $table->index('respondent_user_id');
-        });
-
-        Schema::table('form_answers', function (Blueprint $table) {
-            $table->index(['response_id', 'question_id']);
         });
     }
 
@@ -54,11 +49,6 @@ return new class extends Migration
 
         Schema::table('form_responses', function (Blueprint $table) {
             $table->dropIndex(['form_id', 'created_at']);
-            $table->dropIndex(['respondent_user_id']);
-        });
-
-        Schema::table('form_answers', function (Blueprint $table) {
-            $table->dropIndex(['response_id', 'question_id']);
         });
     }
 };

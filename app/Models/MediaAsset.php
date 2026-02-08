@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Storage;
 class MediaAsset extends Model
 {
     public const TYPES = ['image', 'video', 'audio', 'file'];
-    // ⬇️ tambahkan 'answer'
+    //  tambahkan 'answer'
     public const ATTACHED_TYPES = ['form', 'section', 'question', 'answer'];
 
     protected $fillable = [
@@ -16,11 +16,11 @@ class MediaAsset extends Model
         'attached_type',
         'attached_id',
         'type',
-        'disk',            // ⬅️ baru
+        'disk',
         'path',
         'mime',
-        'original_name',   // ⬅️ baru
-        'sha256',          // ⬅️ baru
+        'original_name',
+        'sha256',
         'size_kb',
         'width',
         'height',
@@ -51,18 +51,31 @@ class MediaAsset extends Model
             'form'     => Form::find($this->attached_id),
             'section'  => FormSection::find($this->attached_id),
             'question' => Question::find($this->attached_id),
-            'answer'   => FormAnswer::find($this->attached_id), // ⬅️ baru
+            'answer'   => FormAnswer::find($this->attached_id),
             default    => null,
         };
     }
 
-    // URL file (butuh storage:link)
+    /**
+     * Get download/view URL for the file.
+     *
+     * BUG-005 FIX: Local disk does not support url().
+     * Use signed route for secure file download instead.
+     */
     public function getUrlAttribute(): ?string
     {
         if (!$this->path) {
             return null;
         }
+
         $disk = $this->disk ?: config('filesystems.default', 'public');
+
+        // Local disk doesn't support public URLs — use download route
+        if ($disk === 'local') {
+            return route('media.download', ['media' => $this->id]);
+        }
+
+        // Public disk can generate URLs directly
         return Storage::disk($disk)->url($this->path);
     }
 }

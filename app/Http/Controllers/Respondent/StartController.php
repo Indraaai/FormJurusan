@@ -24,17 +24,28 @@ class StartController extends Controller
 
         $this->guard->ensureFillable($form);
 
-        // Cek apakah user sudah pernah mengisi
-        $existing = FormResponse::query()
+        $userId = $request->user()->id;
+
+        // Cek apakah user sudah pernah submit
+        $submitted = FormResponse::query()
             ->where('form_id', $form->id)
-            ->where('respondent_user_id', $request->user()->id)
+            ->where('respondent_user_id', $userId)
             ->where('status', 'submitted')
             ->latest('submitted_at')
             ->first();
 
+        // Cek apakah ada draft yang belum selesai
+        $draft = FormResponse::query()
+            ->where('form_id', $form->id)
+            ->where('respondent_user_id', $userId)
+            ->where('status', 'draft')
+            ->latest('id')
+            ->first();
+
         return view('forms.start', [
-            'form'     => $form,
-            'existing' => $existing,
+            'form'      => $form,
+            'submitted' => $submitted,
+            'draft'     => $draft,
         ]);
     }
 

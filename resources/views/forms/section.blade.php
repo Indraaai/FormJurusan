@@ -265,14 +265,15 @@
 
                                     @case('checkboxes')
                                         <div class="mt-1 space-y-2" id="{{ $inputId }}"
-                                            aria-describedby="{{ $hintId }}">
+                                            aria-describedby="{{ $hintId }}"
+                                            @if ($isRequired) data-checkbox-group-required="true" @endif>
                                             @foreach ($q->options as $opt)
                                                 <label
                                                     class="flex items-center gap-2 rounded-xl border border-transparent p-2 hover:border-emerald-200 hover:bg-emerald-50/40">
                                                     <input type="checkbox" name="q[{{ $q->id }}][]"
                                                         value="{{ $opt->id }}"
                                                         {{ in_array((string) $opt->id, array_map('strval', $selectedMany ?? []), true) ? 'checked' : '' }}
-                                                        @if ($isRequired && $loop->first && empty($selectedMany)) required @endif>
+                                                        {{-- BUG-008 FIX: Use JS group validation instead of HTML required on first only --}} data-group="checkbox-{{ $q->id }}">
                                                     <span class="text-emerald-900">{{ $opt->label }}</span>
                                                 </label>
                                             @endforeach
@@ -292,6 +293,102 @@
                                                 </option>
                                             @endforeach
                                         </select>
+                                    @break
+
+                                    {{-- BUG-007 FIX: Multiple-choice grid --}}
+                                    @case('mc_grid')
+                                        @php
+                                            $rowOpts = $q->options->where('role', 'row');
+                                            $colOpts = $q->options->where('role', 'column');
+                                            $gridCells = $ans?->gridCells?->keyBy('row_option_id') ?? collect();
+                                        @endphp
+                                        <div class="mt-1 overflow-x-auto" aria-describedby="{{ $hintId }}">
+                                            <table class="min-w-full border border-emerald-200 text-sm">
+                                                <thead>
+                                                    <tr class="bg-emerald-50">
+                                                        <th class="border border-emerald-200 px-3 py-2 text-left"></th>
+                                                        @foreach ($colOpts as $col)
+                                                            <th
+                                                                class="border border-emerald-200 px-3 py-2 text-center text-emerald-900">
+                                                                {{ $col->label }}</th>
+                                                        @endforeach
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    @foreach ($rowOpts as $row)
+                                                        @php $gridOldVal = old("q.{$q->id}.{$row->id}") ?? $gridCells->get($row->id)?->col_option_id; @endphp
+                                                        <tr>
+                                                            <td
+                                                                class="border border-emerald-200 px-3 py-2 font-medium text-emerald-900">
+                                                                {{ $row->label }}</td>
+                                                            @foreach ($colOpts as $col)
+                                                                <td class="border border-emerald-200 px-3 py-2 text-center">
+                                                                    <input type="radio"
+                                                                        name="q[{{ $q->id }}][{{ $row->id }}]"
+                                                                        value="{{ $col->id }}"
+                                                                        {{ (string) $gridOldVal === (string) $col->id ? 'checked' : '' }}
+                                                                        @if ($isRequired && $loop->parent->first) required @endif>
+                                                                </td>
+                                                            @endforeach
+                                                        </tr>
+                                                    @endforeach
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    @break
+
+                                    {{-- BUG-007 FIX: Checkbox grid --}}
+                                    @case('checkbox_grid')
+                                        @php
+                                            $rowOpts = $q->options->where('role', 'row');
+                                            $colOpts = $q->options->where('role', 'column');
+                                            $gridCells = $ans?->gridCells ?? collect();
+                                            $gridCellsByRow = $gridCells->groupBy('row_option_id');
+                                        @endphp
+                                        <div class="mt-1 overflow-x-auto" aria-describedby="{{ $hintId }}">
+                                            <table class="min-w-full border border-emerald-200 text-sm">
+                                                <thead>
+                                                    <tr class="bg-emerald-50">
+                                                        <th class="border border-emerald-200 px-3 py-2 text-left"></th>
+                                                        @foreach ($colOpts as $col)
+                                                            <th
+                                                                class="border border-emerald-200 px-3 py-2 text-center text-emerald-900">
+                                                                {{ $col->label }}</th>
+                                                        @endforeach
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    @foreach ($rowOpts as $row)
+                                                        @php
+                                                            $rowSelectedCols =
+                                                                old("q.{$q->id}.{$row->id}") ??
+                                                                ($gridCellsByRow
+                                                                    ->get($row->id)
+                                                                    ?->pluck('col_option_id')
+                                                                    ->all() ??
+                                                                    []);
+                                                            $rowSelectedCols = array_map(
+                                                                'strval',
+                                                                (array) $rowSelectedCols,
+                                                            );
+                                                        @endphp
+                                                        <tr>
+                                                            <td
+                                                                class="border border-emerald-200 px-3 py-2 font-medium text-emerald-900">
+                                                                {{ $row->label }}</td>
+                                                            @foreach ($colOpts as $col)
+                                                                <td class="border border-emerald-200 px-3 py-2 text-center">
+                                                                    <input type="checkbox"
+                                                                        name="q[{{ $q->id }}][{{ $row->id }}][]"
+                                                                        value="{{ $col->id }}"
+                                                                        {{ in_array((string) $col->id, $rowSelectedCols, true) ? 'checked' : '' }}>
+                                                                </td>
+                                                            @endforeach
+                                                        </tr>
+                                                    @endforeach
+                                                </tbody>
+                                            </table>
+                                        </div>
                                     @break
 
                                     @case('linear_scale')
@@ -428,4 +525,36 @@
 
         </div>
     </div>
+
+    {{-- BUG-008 FIX: JavaScript validation for required checkbox groups --}}
+    <script>
+        document.getElementById('sectionForm')?.addEventListener('submit', function(e) {
+            const requiredGroups = this.querySelectorAll('[data-checkbox-group-required="true"]');
+            let firstError = null;
+
+            requiredGroups.forEach(function(group) {
+                const checkboxes = group.querySelectorAll('input[type="checkbox"]');
+                const checked = group.querySelectorAll('input[type="checkbox"]:checked');
+                const existingError = group.parentElement.querySelector('.checkbox-group-error');
+
+                if (existingError) existingError.remove();
+
+                if (checkboxes.length > 0 && checked.length === 0) {
+                    const errorDiv = document.createElement('div');
+                    errorDiv.className = 'checkbox-group-error mt-1 text-sm text-red-600';
+                    errorDiv.textContent = 'Pilih minimal satu opsi.';
+                    group.parentElement.appendChild(errorDiv);
+                    if (!firstError) firstError = group;
+                }
+            });
+
+            if (firstError) {
+                e.preventDefault();
+                firstError.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'center'
+                });
+            }
+        });
+    </script>
 </x-app-layout>

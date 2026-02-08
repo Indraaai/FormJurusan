@@ -16,27 +16,28 @@ class SubmitController extends Controller
     {
         $user = $request->user();
 
-        // Get response from validated request
-        $response = $request->get('_validated_response');
-
-        if (!$response) {
-            // Fallback if validation didn't return response
+        // BUG-003 FIX: Always re-fetch with lockForUpdate inside transaction
+        // to prevent race condition between validation and submission
+        return DB::transaction(function () use ($request, $form, $user) {
+            // Re-fetch response with pessimistic lock to prevent concurrent submissions
             $response = FormResponse::query()
                 ->where('form_id', $form->id)
                 ->where('respondent_user_id', $user->id)
-                ->where('status', 'draft') // Explicit draft only
-                ->lockForUpdate() // Prevent concurrent submissions
+                ->where('status', 'draft')
+                ->lockForUpdate()
                 ->latest('id')
-                ->firstOrFail();
-        }
+                ->first();
 
-        // Double-check status (belt and suspenders approach)
-        if ($response->status !== 'draft') {
-            abort(403, 'Respons ini sudah dikirim sebelumnya.');
-        }
+            if (!$response) {
+                abort(403, 'Draft response tidak ditemukan atau sudah dikirim sebelumnya.');
+            }
 
-        // Submit the response in a transaction
-        DB::transaction(function () use ($request, $response, $user) {
+            // Double-check status inside lock (belt and suspenders)
+            if ($response->status !== 'draft') {
+                abort(403, 'Respons ini sudah dikirim sebelumnya.');
+            }
+
+            // Submit the response
             $started  = $response->started_at ?: ($response->created_at ?: now());
             $duration = now()->diffInSeconds($started);
 
@@ -56,10 +57,10 @@ class SubmitController extends Controller
                 'user_id' => $user->id,
                 'duration_seconds' => $response->duration_seconds,
             ]);
-        });
 
-        return redirect()->route('forms.done', ['form' => $form->uid])
-            ->with('status', 'Respons berhasil terkirim.');
+            return redirect()->route('forms.done', ['form' => $form->uid])
+                ->with('status', 'Respons berhasil terkirim.');
+        });
     }
 
     public function done(Request $request, Form $form)

@@ -23,7 +23,7 @@ class ExportController extends Controller
             // UTF-8 BOM agar Excel nyaman
             fwrite($out, "\xEF\xBB\xBF");
 
-            // Header kolom sederhana (bisa diperkaya)
+            // Header kolom
             fputcsv($out, ['Response UID', 'User', 'Email', 'Submitted At', 'Question', 'Answer']);
 
             // Use chunk to prevent memory exhaustion with large datasets
@@ -40,15 +40,9 @@ class ExportController extends Controller
                         $email = $resp->respondent_email ?? optional($resp->respondent)->email ?? '-';
                         foreach ($resp->answers as $ans) {
                             $q = $ans->question_text_snapshot ?: optional($ans->question)->title;
-                            $val = $ans->long_text_value
-                                ?? $ans->text_value
-                                ?? ($ans->option_label_snapshot ?: optional($ans->option)->label)
-                                ?? (string) $ans->number_value
-                                ?? ($ans->date_value ? $ans->date_value->format('Y-m-d') : null)
-                                ?? ($ans->time_value ? $ans->time_value->format('H:i:s') : null)
-                                ?? ($ans->datetime_value ? $ans->datetime_value->format('Y-m-d H:i:s') : null)
-                                ?? ($ans->fileMedia ? $ans->fileMedia->path : null)
-                                ?? '';
+
+                            // BUG-011 FIX: Use explicit conditionals instead of fragile ?? chain
+                            $val = $this->resolveAnswerValue($ans);
 
                             fputcsv($out, [
                                 $resp->uid,
@@ -64,5 +58,70 @@ class ExportController extends Controller
 
             fclose($out);
         }, 200, $headers);
+    }
+
+    /**
+     * BUG-011 FIX: Resolve answer value with explicit type checks
+     * instead of fragile null-coalescing chain.
+     */
+    private function resolveAnswerValue($ans): string
+    {
+        // Text values (most common)
+        if ($ans->long_text_value !== null) {
+            return $ans->long_text_value;
+        }
+        if ($ans->text_value !== null) {
+            return $ans->text_value;
+        }
+
+        // Single-choice option
+        $optionLabel = $ans->option_label_snapshot ?: optional($ans->option)->label;
+        if ($optionLabel !== null) {
+            return $optionLabel;
+        }
+
+        // Multi-choice (checkboxes) — join labels
+        if ($ans->selectedOptions && $ans->selectedOptions->isNotEmpty()) {
+            return $ans->selectedOptions
+                ->map(fn($so) => $so->option_label_snapshot ?? optional($so->option)->label ?? '')
+                ->filter()
+                ->implode(', ');
+        }
+
+        // Grid cells
+        if ($ans->gridCells && $ans->gridCells->isNotEmpty()) {
+            return $ans->gridCells
+                ->map(fn($gc) => ($gc->row_label ?? '') . ': ' . ($gc->col_label ?? ''))
+                ->implode('; ');
+        }
+
+        // Numeric — explicit check for 0
+        if ($ans->number_value !== null) {
+            return (string) $ans->number_value;
+        }
+
+        // Date/time
+        if ($ans->date_value !== null) {
+            return $ans->date_value instanceof \Carbon\Carbon
+                ? $ans->date_value->format('Y-m-d')
+                : (string) $ans->date_value;
+        }
+        if ($ans->time_value !== null) {
+            return $ans->time_value instanceof \Carbon\Carbon
+                ? $ans->time_value->format('H:i:s')
+                : (string) $ans->time_value;
+        }
+        if ($ans->datetime_value !== null) {
+            return $ans->datetime_value instanceof \Carbon\Carbon
+                ? $ans->datetime_value->format('Y-m-d H:i:s')
+                : (string) $ans->datetime_value;
+        }
+
+        // File upload
+        if ($ans->fileMedia) {
+            return $ans->fileMedia->original_name ?? $ans->fileMedia->path ?? '';
+        }
+
+        return '';
     }
 }

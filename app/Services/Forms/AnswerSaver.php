@@ -27,10 +27,13 @@ class AnswerSaver
      */
     public function saveSection(FormResponse $resp, FormSection $section, Request $request): void
     {
-        Log::debug('AnswerSaver.saveSection - request data', [
-            'response_id' => $resp->id,
-            'request_all' => $request->all(),
-        ]);
+        // BUG-013 FIX: Only log sensitive request data in local environment
+        if (app()->environment('local')) {
+            Log::debug('AnswerSaver.saveSection - request data', [
+                'response_id' => $resp->id,
+                'request_all' => $request->all(),
+            ]);
+        }
 
         DB::transaction(function () use ($resp, $section, $request) {
             foreach ($section->questions as $q) {
@@ -58,6 +61,8 @@ class AnswerSaver
 
                 switch ($q->type) {
                     case 'short_text':
+                    case 'email':    // BUG-014 FIX: Handle email type (stored as text)
+                    case 'url':      // BUG-014 FIX: Handle url type (stored as text)
                         $val = $this->sanitizeInput($request->input($key));
                         if ($val !== null) $answer->text_value = $val;
                         break;
@@ -65,6 +70,11 @@ class AnswerSaver
                     case 'long_text':
                         $val = $this->sanitizeInput($request->input($key));
                         if ($val !== null) $answer->long_text_value = $val;
+                        break;
+
+                    case 'number':   // BUG-014 FIX: Handle number type explicitly
+                        $val = $request->input($key);
+                        if ($val !== null && $val !== '') $answer->number_value = (float) $val;
                         break;
 
                     case 'multiple_choice':
@@ -125,6 +135,12 @@ class AnswerSaver
                         if ($val) $answer->time_value = $val; // simpan string 'H:i'
                         break;
 
+                    case 'datetime':  // BUG-014 FIX: Handle datetime type
+                    case 'date_time': // alias
+                        $val = $request->input($key);
+                        if ($val) $answer->datetime_value = Carbon::parse($val);
+                        break;
+
                     case 'file_upload':
                         if ($request->hasFile($fileKey)) {
                             $f = $request->file($fileKey);
@@ -146,6 +162,54 @@ class AnswerSaver
                                     'created_by'    => $request->user()->id ?? null,
                                 ]
                             );
+                        }
+                        break;
+
+                    case 'mc_grid':
+                        // BUG-007 FIX: Handle multiple-choice grid
+                        // Expected input: q[{$q->id}][row_option_id] = col_option_id
+                        $answer->save();
+                        $gridData = (array) $request->input($key, []);
+                        foreach ($gridData as $rowOptId => $colOptId) {
+                            if (!is_numeric($rowOptId) || !is_numeric($colOptId)) continue;
+                            $rowOpt = QuestionOption::where('question_id', $q->id)
+                                ->where('role', 'row')->find($rowOptId);
+                            $colOpt = QuestionOption::where('question_id', $q->id)
+                                ->where('role', 'column')->find($colOptId);
+                            if ($rowOpt && $colOpt) {
+                                $answer->gridCells()->create([
+                                    'row_option_id' => $rowOpt->id,
+                                    'col_option_id' => $colOpt->id,
+                                    'row_label'     => $rowOpt->label,
+                                    'col_label'     => $colOpt->label,
+                                ]);
+                            }
+                        }
+                        break;
+
+                    case 'checkbox_grid':
+                        // BUG-007 FIX: Handle checkbox grid
+                        // Expected input: q[{$q->id}][row_option_id][] = [col_option_id, ...]
+                        $answer->save();
+                        $gridData = (array) $request->input($key, []);
+                        foreach ($gridData as $rowOptId => $colOptIds) {
+                            if (!is_numeric($rowOptId)) continue;
+                            $rowOpt = QuestionOption::where('question_id', $q->id)
+                                ->where('role', 'row')->find($rowOptId);
+                            if (!$rowOpt) continue;
+                            foreach ((array) $colOptIds as $colOptId) {
+                                if (!is_numeric($colOptId)) continue;
+                                $colOpt = QuestionOption::where('question_id', $q->id)
+                                    ->where('role', 'column')->find($colOptId);
+                                if ($colOpt) {
+                                    $answer->gridCells()->create([
+                                        'row_option_id' => $rowOpt->id,
+                                        'col_option_id' => $colOpt->id,
+                                        'row_label'     => $rowOpt->label,
+                                        'col_label'     => $colOpt->label,
+                                    ]);
+                                }
+                            }
                         }
                         break;
 

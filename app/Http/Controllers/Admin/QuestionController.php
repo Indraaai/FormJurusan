@@ -122,9 +122,12 @@ class QuestionController extends Controller
             'options.*.is_other' => ['nullable', 'boolean'],
         ]);
 
-        // Pastikan section target milik form yang sama
-        $targetSection = FormSection::where('id', $data['section_id'])->firstOrFail();
-        $form = $targetSection->form;
+        // BUG-012 FIX: Pastikan section target milik form yang SAMA dengan question saat ini
+        $currentForm = $question->section->form;
+        $targetSection = FormSection::where('id', $data['section_id'])
+            ->where('form_id', $currentForm->id)
+            ->firstOrFail();
+        $form = $currentForm;
 
         $question->update([
             'section_id' => $data['section_id'],
