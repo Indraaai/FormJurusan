@@ -11,7 +11,7 @@ class SectionController extends Controller
 {
     public function index(Form $form)
     {
-        $sections = $form->sections()->get();
+        $sections = $form->sections()->withCount('questions')->get();
         return view('admin.sections.index', compact('form', 'sections'));
     }
 

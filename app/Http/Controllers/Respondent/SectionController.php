@@ -10,6 +10,7 @@ use App\Services\Forms\SectionNavigator;
 use App\Services\Forms\AnswerSaver;
 use App\Support\QuestionValidationRules;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class SectionController extends Controller
 {
@@ -27,10 +28,36 @@ class SectionController extends Controller
 
         $this->guard->ensureFillable($form);
 
+        // Load all needed relations in one optimized query
         $form->load([
-            'sections' => fn($q) => $q->orderBy('position'),
-            'sections.questions' => fn($q) => $q->orderBy('position'),
-            'sections.questions.options' => fn($q) => $q->orderBy('position'),
+            'sections' => fn($q) => $q->orderBy('position')
+                ->select('id', 'form_id', 'title', 'description', 'position'),
+            'sections.questions' => fn($q) => $q->orderBy('position')
+                ->select(
+                    'id',
+                    'section_id',
+                    'type',
+                    'title',
+                    'description',
+                    'required',
+                    'position',
+                    'shuffle_options',
+                    'other_option_enabled',
+                    'settings'
+                ),
+            'sections.questions.options' => fn($q) => $q->orderBy('position')
+                ->select('id', 'question_id', 'label', 'value', 'position', 'role', 'is_other'),
+            'sections.questions.validations' => fn($q) => $q
+                ->select(
+                    'id',
+                    'question_id',
+                    'validation_type',
+                    'min_value',
+                    'max_value',
+                    'pattern',
+                    'message',
+                    'extras'
+                ),
         ]);
 
         $section = $this->nav->getByPosition($form, $pos);
@@ -38,10 +65,15 @@ class SectionController extends Controller
 
         $resp = $this->drafts->getOrCreate($form, $request);
 
+        // Eager load answer relations
         $answers = $resp->answers()
             ->whereIn('question_id', $section->questions->pluck('id'))
-            ->with(['selectedOptions', 'fileMedia'])
-            ->get()->keyBy('question_id');
+            ->with([
+                'selectedOptions:id,answer_id,option_id,option_label_snapshot',
+                'fileMedia:id,attached_type,attached_id,original_name,path,mime'
+            ])
+            ->get()
+            ->keyBy('question_id');
 
         return view('forms.section', [
             'form'     => $form,
@@ -88,11 +120,47 @@ class SectionController extends Controller
                 unset($rules["q.{$q->id}"]);
             }
         }
+
+        // Debug: Log validation rules
+        Log::debug('Section save validation', [
+            'form_id' => $form->id,
+            'section_id' => $section->id,
+            'response_id' => $resp->id,
+            'rules' => $rules,
+            'request_all' => $request->all(),
+        ]);
+
         $validated = $request->validate($rules, $messages);
 
-        // Simpan jawaban
-        $this->saver->saveSection($resp, $section, $request);
+        // Debug: Log validated data
+        Log::debug('Validation passed', [
+            'validated_data_keys' => array_keys($validated),
+        ]);
 
+        // Simpan jawaban
+        try {
+            $this->saver->saveSection($resp, $section, $request);
+        } catch (\InvalidArgumentException $e) {
+            // Validation errors from AnswerSaver - show to user
+            return back()
+                ->withErrors(['answer_validation' => $e->getMessage()])
+                ->withInput();
+        } catch (\Exception $e) {
+            // Unexpected error - log and show generic message
+            Log::error('Failed to save form section', [
+                'form_id' => $form->id,
+                'section_id' => $section->id,
+                'user_id' => $request->user()->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return back()
+                ->with('error', 'Terjadi kesalahan saat menyimpan jawaban. Silakan coba lagi.')
+                ->withInput();
+        }
+
+        // Jika user klik "Review" atau ini section terakhir
         if ($request->boolean('go_review')) {
             return redirect()->route('forms.review', $form->uid)
                 ->with('status', 'Jawaban disimpan. Silakan review sebelum kirim.');
@@ -105,10 +173,9 @@ class SectionController extends Controller
                 ->with('status', 'Jawaban tersimpan.');
         }
 
-        // Last section → siap submit
-        return to_route('forms.section', ['form' => $form->uid, 'pos' => $section->position])
-            ->with('ready_to_submit', true)
-            ->with('status', 'Jawaban tersimpan. Silakan submit.');
+        // Jika ini section terakhir dan user tidak klik review, auto redirect ke review
+        return redirect()->route('forms.review', $form->uid)
+            ->with('status', 'Jawaban tersimpan. Silakan review sebelum mengirim.');
     }
     public function review(Request $request, \App\Models\Form $form)
     {

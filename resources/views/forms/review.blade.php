@@ -12,6 +12,18 @@
                 </div>
             @endif
 
+            {{-- Validation Errors --}}
+            @if ($errors->any())
+                <div class="mb-4 bg-red-50 border border-red-200 text-red-800 rounded-lg p-4">
+                    <div class="font-semibold mb-2">⚠️ Tidak dapat mengirim jawaban:</div>
+                    <ul class="list-disc list-inside space-y-1">
+                        @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
+
             {{-- progress singkat --}}
             @php
                 $sections = ($form->sections ?? collect())->sortBy('position')->values();
@@ -147,23 +159,36 @@
                 @endforelse
 
                 {{-- Actions --}}
-                <form method="POST" action="{{ route('forms.submit', $form) }}"
-                    onsubmit="return confirm('Kirim jawaban sekarang?');">
+                <form method="POST" action="{{ route('forms.submit', $form) }}" id="submitForm">
                     @csrf
-                    <div class="flex justify-between">
+                    <div class="flex justify-between items-center gap-4">
                         @php $last = $sections->last(); @endphp
                         @if ($last)
                             <a href="{{ route('forms.section', ['form' => $form->uid, 'pos' => $last->position]) }}"
-                                class="px-4 py-2 bg-gray-100 rounded-lg">Kembali</a>
+                                class="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition">
+                                ← Kembali ke Section Terakhir
+                            </a>
                         @else
                             <a href="{{ route('forms.start', $form->uid) }}"
-                                class="px-4 py-2 bg-gray-100 rounded-lg">Kembali</a>
+                                class="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition">
+                                ← Kembali
+                            </a>
                         @endif
 
-                        <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-lg">
-                            Kirim
+                        <button type="submit" 
+                            onclick="return confirm('⚠️ Kirim jawaban sekarang?\n\nSetelah dikirim, jawaban tidak dapat diubah lagi.')"
+                            class="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow-sm transition flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
+                            </svg>
+                            Kirim Jawaban
                         </button>
                     </div>
+                    
+                    {{-- Helper text --}}
+                    <p class="text-sm text-gray-500 mt-4 text-center">
+                        💡 Pastikan semua jawaban sudah benar sebelum mengirim. Kamu bisa edit dengan klik tombol "Edit" di setiap section.
+                    </p>
                 </form>
             </div>
         </div>

@@ -11,7 +11,9 @@ class ResponseAdminController extends Controller
     public function index(Form $form)
     {
         $responses = $form->responses()
-            ->with('respondent')
+            ->with([
+                'respondent:id,name,email', // Select only needed columns
+            ])
             ->latest('submitted_at')
             ->paginate(20);
 
@@ -20,7 +22,22 @@ class ResponseAdminController extends Controller
 
     public function show(FormResponse $response)
     {
-        $response->load(['form', 'respondent', 'answers.question', 'answers.option', 'answers.fileMedia']);
+        // Load all related data in one go
+        $response->load([
+            'form:id,uid,title',
+            'respondent:id,name,email',
+            'answers' => function ($query) {
+                $query->with([
+                    'question:id,title,type,section_id',
+                    'question.section:id,title,position',
+                    'option:id,label',
+                    'selectedOptions.option:id,label',
+                    'gridCells',
+                    'fileMedia:id,attached_type,attached_id,original_name,path,mime,size_kb'
+                ])->orderBy('question_id');
+            }
+        ]);
+
         return view('admin.responses.show', compact('response'));
     }
 }

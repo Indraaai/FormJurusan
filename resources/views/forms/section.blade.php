@@ -65,7 +65,7 @@
                             @php
                                 $ans = $answers[$q->id] ?? null;
 
-                                $oldVal = old("q.$q->id");
+                                $oldVal = old("q.{$q->id}");
                                 $selectedSingle = $oldVal !== null ? $oldVal : $ans?->option_id;
                                 $selectedMany =
                                     $oldVal !== null
@@ -271,7 +271,7 @@
                                                     class="flex items-center gap-2 rounded-xl border border-transparent p-2 hover:border-emerald-200 hover:bg-emerald-50/40">
                                                     <input type="checkbox" name="q[{{ $q->id }}][]"
                                                         value="{{ $opt->id }}"
-                                                        {{ in_array($opt->id, $selectedMany ?? [], true) ? 'checked' : '' }}
+                                                        {{ in_array((string) $opt->id, array_map('strval', $selectedMany ?? []), true) ? 'checked' : '' }}
                                                         @if ($isRequired && $loop->first && empty($selectedMany)) required @endif>
                                                     <span class="text-emerald-900">{{ $opt->label }}</span>
                                                 </label>
@@ -400,19 +400,17 @@
                             @endif
 
                             <div class="flex gap-2">
-                                {{-- Simpan & Lanjut / Simpan --}}
-                                <button type="submit"
-                                    class="inline-flex items-center rounded-xl bg-emerald-600 px-4 py-2 text-sm text-white shadow-sm hover:bg-emerald-700">
-                                    {{ $isLast ? 'Simpan' : 'Lanjut' }}
-                                </button>
-
-                                {{-- Kirim jawaban (section terakhir) --}}
-                                @if ($isLast)
-                                    <button type="submit" form="sectionForm" formmethod="POST"
-                                        formaction="{{ route('forms.submit', ['form' => $form->uid]) }}"
-                                        onclick="return confirm('Kirim jawaban sekarang?')"
-                                        class="inline-flex items-center rounded-xl bg-emerald-700 px-4 py-2 text-sm text-white shadow-sm hover:bg-emerald-800">
-                                        Kirim Jawaban
+                                {{-- Simpan & Lanjut (untuk section bukan terakhir) --}}
+                                @if (!$isLast)
+                                    <button type="submit"
+                                        class="inline-flex items-center rounded-xl bg-emerald-600 px-4 py-2 text-sm text-white shadow-sm hover:bg-emerald-700">
+                                        Simpan & Lanjut
+                                    </button>
+                                @else
+                                    {{-- Section terakhir: Simpan & Review --}}
+                                    <button type="submit" name="go_review" value="1"
+                                        class="inline-flex items-center rounded-xl bg-emerald-600 px-4 py-2 text-sm text-white shadow-sm hover:bg-emerald-700">
+                                        Simpan & Review
                                     </button>
                                 @endif
                             </div>

@@ -66,7 +66,7 @@
                                                         {{ $form->title }}
                                                     </a>
                                                     <p class="text-xs text-secondary-500 mt-0.5">
-                                                        {{ $form->questions()->count() }} pertanyaan
+                                                        {{ $form->questions_count ?? 0 }} pertanyaan
                                                     </p>
                                                 </div>
                                             </div>
@@ -89,7 +89,7 @@
                                         <td class="whitespace-nowrap px-3 py-4 text-center">
                                             <span
                                                 class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-primary-100 text-sm font-semibold text-primary-700">
-                                                {{ $form->responses_count ?? $form->responses()->count() }}
+                                                {{ $form->responses_count ?? 0 }}
                                             </span>
                                         </td>
                                         <td class="whitespace-nowrap px-3 py-4 text-sm text-secondary-600">
@@ -117,7 +117,8 @@
                                                         <i class="bi bi-three-dots-vertical text-lg"></i>
                                                     </button>
 
-                                                    <div x-show="open" x-transition:enter="transition ease-out duration-100"
+                                                    <div x-show="open"
+                                                        x-transition:enter="transition ease-out duration-100"
                                                         x-transition:enter-start="transform opacity-0 scale-95"
                                                         x-transition:enter-end="transform opacity-100 scale-100"
                                                         x-transition:leave="transition ease-in duration-75"
@@ -163,7 +164,7 @@
                                                                 <form method="POST"
                                                                     action="{{ route('admin.forms.publish', $form) }}">
                                                                     @csrf
-                                                                    @method('PATCH')
+                                                                    @method('PUT')
                                                                     <button type="submit"
                                                                         class="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-success-700 hover:bg-success-50 transition-colors">
                                                                         <i class="bi bi-check-circle"></i>
@@ -174,11 +175,7 @@
                                                                 <form method="POST"
                                                                     action="{{ route('admin.forms.unpublish', $form) }}">
                                                                     @csrf
-                                                                    @method('PATCH')
-                                                                    <button type="submit"
-                                                                        class="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-warning-700 hover:bg-warning-50 transition-colors">
-                                                                        <i class="bi bi-x-circle"></i>
-                                                                        <span>Unpublish Form</span>
+                                                                    @method('PUT')
                                                                     </button>
                                                                 </form>
                                                             @endif
@@ -223,8 +220,8 @@
                                             {{ $form->title }}
                                         </a>
                                         <p class="text-xs text-secondary-500 mt-1">
-                                            {{ $form->questions()->count() }} pertanyaan •
-                                            {{ $form->responses_count ?? $form->responses()->count() }} respons
+                                            {{ $form->questions_count ?? 0 }} pertanyaan •
+                                            {{ $form->responses_count ?? 0 }} respons
                                         </p>
                                     </div>
                                 </div>
@@ -275,10 +272,8 @@
                 @endif
             @else
                 <!-- Empty State -->
-                <div
-                    class="bg-white rounded-xl shadow-soft border border-primary-100 p-12 text-center">
-                    <div
-                        class="mx-auto w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mb-4">
+                <div class="bg-white rounded-xl shadow-soft border border-primary-100 p-12 text-center">
+                    <div class="mx-auto w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mb-4">
                         <i class="bi bi-inbox text-3xl text-primary-600"></i>
                     </div>
                     <h3 class="text-lg font-semibold text-secondary-900 mb-2">Belum ada form</h3>

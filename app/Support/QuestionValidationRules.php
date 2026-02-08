@@ -4,6 +4,8 @@ namespace App\Support;
 
 use App\Models\Question;
 use App\Models\QuestionValidation;
+use App\Rules\TimeAfterOrEqual;
+use App\Rules\TimeBeforeOrEqual;
 
 class QuestionValidationRules
 {
@@ -93,15 +95,22 @@ class QuestionValidationRules
                 case 'time_range':
                     $min = $extras['min_time'] ?? null; // format HH:MM
                     $max = $extras['max_time'] ?? null;
-                    // time di Laravel: pakai date_format atau after/before custom; paling praktis: regex HH:MM + custom compare di FormRequest bila perlu.
+
+                    // First validate format
                     $rules[] = 'date_format:H:i';
+
+                    // Then apply custom range rules
                     if ($min) {
-                        $rules[] = "after_or_equal:$min";
-                        if ($msg) $messages["{$fieldName}.after_or_equal"] = $msg;
+                        $rules[] = new TimeAfterOrEqual($min);
+                        if ($msg) {
+                            $messages["{$fieldName}.time_after_or_equal"] = $msg;
+                        }
                     }
                     if ($max) {
-                        $rules[] = "before_or_equal:$max";
-                        if ($msg) $messages["{$fieldName}.before_or_equal"] = $msg;
+                        $rules[] = new TimeBeforeOrEqual($max);
+                        if ($msg) {
+                            $messages["{$fieldName}.time_before_or_equal"] = $msg;
+                        }
                     }
                     break;
 

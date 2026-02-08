@@ -108,7 +108,7 @@
                                         <td class="px-3 py-4 text-center">
                                             <span
                                                 class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-secondary-100 text-secondary-700 text-sm font-semibold">
-                                                {{ $sec->questions()->count() }}
+                                                {{ $sec->questions_count ?? 0 }}
                                             </span>
                                         </td>
                                         <td class="py-4 pl-3 pr-6">
@@ -119,7 +119,8 @@
                                                     <span>Edit</span>
                                                 </a>
 
-                                                <div class="relative" x-data="{ open: false }" @click.away="open = false">
+                                                <div class="relative" x-data="{ open: false }"
+                                                    @click.away="open = false">
                                                     <button type="button" @click="open = !open"
                                                         class="inline-flex items-center justify-center rounded-lg border border-primary-200 bg-white p-2 text-secondary-600 hover:bg-primary-50 hover:text-primary-700 transition-all">
                                                         <i class="bi bi-three-dots-vertical"></i>
@@ -188,7 +189,7 @@
                                                 Pos: {{ $sec->position }}
                                             </span>
                                             <span class="text-xs text-secondary-500">
-                                                {{ $sec->questions()->count() }} pertanyaan
+                                                {{ $sec->questions_count ?? 0 }} pertanyaan
                                             </span>
                                         </div>
                                     </div>

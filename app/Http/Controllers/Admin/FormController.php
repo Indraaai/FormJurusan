@@ -8,6 +8,7 @@ use App\Models\FormSetting;
 use App\Repositories\Contracts\FormRepositoryInterface;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
@@ -30,6 +31,7 @@ class FormController extends Controller
             'per_page' => 12
         ];
 
+        // Repository automatically eager loads counts
         $forms = $this->formRepository->getAllWithPagination($filters);
 
         $executionTime = microtime(true) - $startTime;
@@ -37,7 +39,7 @@ class FormController extends Controller
             'execution_time' => $executionTime,
             'filters' => $filters,
             'results_count' => $forms->count(),
-            'user_id' => auth()->id(),
+            'user_id' => Auth::id(),
         ]);
 
         return view('admin.forms.index', compact('forms'));
@@ -55,26 +57,41 @@ class FormController extends Controller
             'description' => ['nullable', 'string'],
         ]);
 
-        $formData = [
-            'uid' => (string) Str::ulid(),
-            'title' => $data['title'],
-            'description' => $data['description'] ?? null,
-            'created_by' => Auth::id(),
-            'is_published' => false,
-        ];
+        try {
+            DB::beginTransaction();
 
-        $form = $this->formRepository->create($formData);
+            $formData = [
+                'uid' => (string) Str::ulid(),
+                'title' => $data['title'],
+                'description' => $data['description'] ?? null,
+                'created_by' => Auth::id(),
+                'is_published' => false,
+            ];
 
-        // Buat settings default
-        FormSetting::create([
-            'form_id' => $form->id,
-            'require_sign_in' => true,
-            'collect_emails' => true,
-            'show_progress_bar' => true,
-        ]);
+            $form = $this->formRepository->create($formData);
 
-        return redirect()->route('admin.forms.edit', $form)
-            ->with('status', 'Form berhasil dibuat.');
+            // Buat settings default
+            FormSetting::create([
+                'form_id' => $form->id,
+                'require_sign_in' => true,
+                'collect_emails' => true,
+                'show_progress_bar' => true,
+                'limit_one_response' => false,
+                'allow_edit_after_submit' => false,
+                'shuffle_question_order' => false,
+                'response_receipt_enabled' => false,
+                'captcha_enabled' => false,
+            ]);
+
+            DB::commit();
+
+            return redirect()->route('admin.forms.edit', $form)
+                ->with('status', 'Form berhasil dibuat.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Form creation failed', ['error' => $e->getMessage()]);
+            return back()->withInput()->withErrors(['error' => 'Gagal membuat form. Silakan coba lagi.']);
+        }
     }
 
     public function show(Form $form)
@@ -128,16 +145,29 @@ class FormController extends Controller
     {
         $form->forceFill(['is_published' => true])->save();
 
-        $settings = $form->settings()->firstOrCreate();
-        if (empty($settings->start_at)) $settings->start_at = now();
-        // Optional: pastikan tidak langsung ketutup
-        $settings->end_at = null;
-        $settings->save();
+        // Create settings with proper defaults if not exists
+        $settings = $form->settings()->firstOrCreate([], [
+            'require_sign_in' => true,
+            'collect_emails' => true,
+            'show_progress_bar' => true,
+            'limit_one_response' => false,
+            'allow_edit_after_submit' => false,
+            'shuffle_question_order' => false,
+            'response_receipt_enabled' => false,
+            'captcha_enabled' => false,
+        ]);
+
+        if (empty($settings->start_at)) {
+            $settings->start_at = now();
+            // Optional: pastikan tidak langsung ketutup
+            $settings->end_at = null;
+            $settings->save();
+        }
 
         Log::channel('forms')->info('Form published', [
             'form_id' => $form->id,
             'title' => $form->title,
-            'published_by' => auth()->id(),
+            'published_by' => Auth::id(),
         ]);
 
         return back()->with('status', 'Form published & activated.');
@@ -150,7 +180,7 @@ class FormController extends Controller
         Log::channel('forms')->warning('Form unpublished', [
             'form_id' => $form->id,
             'title' => $form->title,
-            'unpublished_by' => auth()->id(),
+            'unpublished_by' => Auth::id(),
         ]);
 
         return back()->with('status', 'Form unpublished.');

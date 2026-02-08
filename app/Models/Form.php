@@ -41,7 +41,20 @@ class Form extends Model
 
     public function settings()   // <= hasOne ke tabel form_settings
     {
-        return $this->hasOne(\App\Models\FormSetting::class);
+        return $this->hasOne(FormSetting::class)->withDefault([
+            'require_sign_in' => true,
+            'collect_emails' => true,
+            'limit_one_response' => false,
+            'allow_edit_after_submit' => false,
+            'show_progress_bar' => true,
+            'shuffle_question_order' => false,
+            'response_receipt_enabled' => false,
+            'confirmation_message' => null,
+            'start_at' => null,
+            'end_at' => null,
+            'captcha_enabled' => false,
+            'theme' => null,
+        ]);
     }
     public function sections()
     {

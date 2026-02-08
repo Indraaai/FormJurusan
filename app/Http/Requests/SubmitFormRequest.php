@@ -8,6 +8,8 @@ use App\Models\FormResponse;
 use App\Models\Question;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+
 
 class SubmitFormRequest extends FormRequest
 {
@@ -33,8 +35,37 @@ class SubmitFormRequest extends FormRequest
     public function withValidator($validator): void
     {
         $validator->after(function ($validator) {
+            $this->validateResponseStatus($validator);
             $this->validateRequiredQuestions($validator);
         });
+    }
+
+    /**
+     * Validate response is in draft status and can be submitted
+     */
+    protected function validateResponseStatus($validator): void
+    {
+        $form = $this->route('form');
+        $user = $this->user();
+
+        $response = FormResponse::where('form_id', $form->id)
+            ->where('respondent_user_id', $user->id)
+            ->latest('id')
+            ->first();
+
+        if (!$response) {
+            $validator->errors()->add('response', 'Draft response tidak ditemukan.');
+            return;
+        }
+
+        // Validate status is draft
+        if ($response->status === 'submitted') {
+            $validator->errors()->add('response', 'Respons ini sudah dikirim sebelumnya.');
+            return;
+        }
+
+        // Store response in request for controller to use
+        $this->merge(['_validated_response' => $response]);
     }
 
     /**
@@ -45,32 +76,44 @@ class SubmitFormRequest extends FormRequest
         $form = $this->route('form');
         $user = $this->user();
 
-        // Get the draft response
-        $response = FormResponse::where('form_id', $form->id)
-            ->where('respondent_user_id', $user->id)
-            ->where('status', '!=', 'submitted')
-            ->latest('id')
-            ->first();
+        // Get response from previous validation
+        $response = $this->get('_validated_response');
 
         if (!$response) {
-            $validator->errors()->add(
-                'response',
-                'Draft response tidak ditemukan.'
-            );
-            return;
+            return; // Already handled by validateResponseStatus
         }
 
         // Get all required questions for this form
+        // Questions are required if:
+        // 1. question.required = true, OR
+        // 2. question has a 'required' validation rule
         $requiredQuestions = Question::query()
             ->whereHas('section', function ($q) use ($form) {
                 $q->where('form_id', $form->id);
             })
-            ->where('required', true)
-            ->pluck('id', 'title');
+            ->where(function ($q) {
+                $q->where('required', true)
+                    ->orWhereHas('validations', function ($subQ) {
+                        $subQ->where('validation_type', 'required');
+                    });
+            })
+            ->select('id', 'title')
+            ->get()
+            ->keyBy('id')
+            ->pluck('title', 'id'); // Correct: key=id (numeric), value=title (string)
 
         if ($requiredQuestions->isEmpty()) {
             return; // No required questions
         }
+
+        // Debug: Log required questions
+        Log::debug('Required questions for form submission', [
+            'form_id' => $form->id,
+            'user_id' => $user->id,
+            'response_id' => $response->id,
+            'required_question_ids' => $requiredQuestions->keys()->toArray(),
+            'required_question_titles' => $requiredQuestions->values()->toArray(),
+        ]);
 
         // Get all answered questions (with non-null values)
         $answeredQuestions = FormAnswer::where('response_id', $response->id)
@@ -83,12 +126,37 @@ class SubmitFormRequest extends FormRequest
                     ->orWhereNotNull('time_value')
                     ->orWhereNotNull('option_id')
                     ->orWhereExists(function ($subQ) {
+                        // Check for checkbox selections
                         $subQ->select(DB::raw(1))
                             ->from('form_answer_options')
                             ->whereColumn('form_answer_options.answer_id', 'form_answers.id');
+                    })
+                    ->orWhereExists(function ($subQ) {
+                        // Check for file uploads
+                        $subQ->select(DB::raw(1))
+                            ->from('media_assets')
+                            ->whereColumn('media_assets.attached_id', 'form_answers.id')
+                            ->where('media_assets.attached_type', '=', 'answer');
                     });
             })
-            ->pluck('question_id');
+            ->pluck('question_id')
+            ->all();
+
+        // Debug: Log answered questions
+        Log::debug('Answered questions check', [
+            'response_id' => $response->id,
+            'answered_question_ids' => $answeredQuestions,
+            'total_answers_in_response' => FormAnswer::where('response_id', $response->id)->count(),
+        ]);
+
+        // Debug: Show all answers in response
+        $allAnswers = FormAnswer::where('response_id', $response->id)
+            ->with('selectedOptions')
+            ->select('id', 'question_id', 'text_value', 'long_text_value', 'number_value', 'option_id')
+            ->get();
+        Log::debug('All answers in response', [
+            'answers' => $allAnswers->toArray(),
+        ]);
 
         // Find unanswered required questions
         $unansweredIds = $requiredQuestions->keys()->diff($answeredQuestions);
@@ -96,10 +164,23 @@ class SubmitFormRequest extends FormRequest
         if ($unansweredIds->isNotEmpty()) {
             $unansweredTitles = $requiredQuestions->only($unansweredIds)->values();
 
+            Log::warning('Unanswered required questions - DETAILED DEBUG', [
+                'required_questions_collection' => $requiredQuestions->toArray(),
+                'unanswered_ids_array' => $unansweredIds->toArray(),
+                'unanswered_titles' => $unansweredTitles->toArray(),
+                'unanswered_titles_implode' => $unansweredTitles->take(3)->implode(', '),
+            ]);
+
+            // Build error message with fallback to IDs if titles are empty
+            $titlesList = $unansweredTitles->take(3)->implode(', ');
+            if (empty($titlesList)) {
+                $titlesList = $unansweredIds->take(3)->implode(', ');
+            }
+
             $validator->errors()->add(
                 'required_questions',
                 'Masih ada ' . $unansweredIds->count() . ' pertanyaan wajib yang belum dijawab: ' .
-                    $unansweredTitles->take(3)->implode(', ') .
+                    $titlesList .
                     ($unansweredIds->count() > 3 ? ' dan lainnya.' : '')
             );
         }

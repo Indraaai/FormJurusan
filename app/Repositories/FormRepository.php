@@ -7,6 +7,7 @@ use App\Repositories\Contracts\FormRepositoryInterface;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 
 class FormRepository implements FormRepositoryInterface
 {
@@ -15,12 +16,12 @@ class FormRepository implements FormRepositoryInterface
         $query = Form::query()
             ->select(['id', 'uid', 'title', 'description', 'is_published', 'created_at', 'created_by'])
             ->with(['creator:id,name'])
-            ->withCount('responses');
+            ->withCount(['responses', 'questions']);
 
         if (isset($filters['search'])) {
             $query->where(function ($q) use ($filters) {
                 $q->where('title', 'like', "%{$filters['search']}%")
-                  ->orWhere('description', 'like', "%{$filters['search']}%");
+                    ->orWhere('description', 'like', "%{$filters['search']}%");
             });
         }
 
@@ -62,7 +63,7 @@ class FormRepository implements FormRepositoryInterface
             'form_id' => $form->id,
             'old_data' => $oldData,
             'new_data' => $data,
-            'updated_by' => auth()->id(),
+            'updated_by' => Auth::id(),
         ]);
 
         return $form->fresh();
@@ -78,7 +79,7 @@ class FormRepository implements FormRepositoryInterface
             Log::channel('forms')->warning('Form deleted', [
                 'form_id' => $formId,
                 'title' => $title,
-                'deleted_by' => auth()->id(),
+                'deleted_by' => Auth::id(),
             ]);
         }
 

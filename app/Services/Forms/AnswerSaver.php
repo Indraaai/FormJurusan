@@ -11,6 +11,8 @@ use App\Services\FileUploadService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
+
 
 class AnswerSaver
 {
@@ -25,6 +27,11 @@ class AnswerSaver
      */
     public function saveSection(FormResponse $resp, FormSection $section, Request $request): void
     {
+        Log::debug('AnswerSaver.saveSection - request data', [
+            'response_id' => $resp->id,
+            'request_all' => $request->all(),
+        ]);
+
         DB::transaction(function () use ($resp, $section, $request) {
             foreach ($section->questions as $q) {
                 $key    = "q.{$q->id}";
@@ -79,6 +86,7 @@ class AnswerSaver
 
                     case 'checkboxes':
                         // disimpan di selectedOptions (hasMany)
+                        // Save dulu untuk mendapat ID (jika record baru)
                         $answer->save();
                         $ids = (array) $request->input($key, []);
 
@@ -99,7 +107,7 @@ class AnswerSaver
                                 'option_label_snapshot' => $opt?->label,
                             ]);
                         }
-                        // lanjut ke save() di bawah untuk timestamp
+                        // Note: $answer->save() dipanggil lagi di akhir loop untuk update timestamps
                         break;
 
                     case 'linear_scale':
@@ -167,6 +175,19 @@ class AnswerSaver
         return $option;
     }
 
+    /**
+     * Sanitize input by trimming whitespace only.
+     *
+     * SECURITY NOTE: We do NOT htmlspecialchars() here because:
+     * 1. Data should be stored in raw form in database
+     * 2. Laravel Blade {{ }} auto-escapes output (prevents XSS)
+     * 3. Early encoding causes double-encoding issues
+     *
+     * Follow principle: "Escape on OUTPUT, not on INPUT"
+     *
+     * @param mixed $input
+     * @return mixed
+     */
     private function sanitizeInput($input)
     {
         if ($input === null) {
@@ -179,12 +200,9 @@ class AnswerSaver
         }
 
         if (is_string($input)) {
-            // Trim whitespace
-            $input = trim($input);
-
-            // Convert special characters to HTML entities to prevent XSS
-            // But preserve user input - don't strip tags completely
-            return htmlspecialchars($input, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+            // Only trim whitespace - that's it!
+            // Security: Laravel Blade {{ }} auto-escapes output
+            return trim($input);
         }
 
         // Return as-is for other types (numbers, booleans, etc.)

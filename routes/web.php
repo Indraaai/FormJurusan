@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\ProfileController;
 // routes admin
 use App\Http\Controllers\Admin\FormController;
@@ -27,10 +28,10 @@ Route::get('/', function () {
 });
 
 // ====== Dashboard (responden) ======
-// Kalau kamu TIDAK pakai email verification, ganti ['auth','verified'] jadi ['auth'] saja.
 // routes/web.php
 Route::get('/dashboard', function () {
-    if (auth()->user()->isAdmin()) {
+    $user = Auth::user();
+    if ($user && $user->role === 'admin') {
         return redirect()->route('admin.home');
     }
     return redirect()->route('respondent.forms.index');
@@ -97,23 +98,38 @@ Route::middleware(['auth', 'verified'/*, 'respondent.domain' */])->group(functio
     // Daftar form yang tersedia untuk responden
     Route::get('/my/forms', [MyFormsController::class, 'index'])
         ->name('respondent.forms.index');
+
     // Halaman awal/cover form + mulai/lanjut
     Route::get('/forms/{form:uid}', [StartController::class, 'show'])
+        ->middleware('throttle:60,1') // 60 views per minute
         ->name('forms.start');
+
     Route::post('/forms/{form:uid}/begin', [StartController::class, 'begin'])
+        ->middleware('throttle:draft-creation') // Use custom limiter
         ->name('forms.begin');
+
     // Isi per section
-    // Respondent
     Route::get('/forms/{form:uid}/s/{pos?}', [RespondentSectionController::class, 'show'])
-        ->whereNumber('pos')->name('forms.section');
+        ->whereNumber('pos')
+        ->middleware('throttle:100,1') // Navigation intensive
+        ->name('forms.section');
+
     Route::post('/forms/{form:uid}/s/{pos}/save', [RespondentSectionController::class, 'save'])
-        ->whereNumber('pos')->name('forms.section.save');
+        ->whereNumber('pos')
+        ->middleware('throttle:answer-save') // Use custom limiter
+        ->name('forms.section.save');
+
     // Submit & selesai
     Route::post('/forms/{form:uid}/submit', [SubmitController::class, 'submit'])
+        ->middleware('throttle:form-submission') // STRICT limit - most important
         ->name('forms.submit');
+
     Route::get('/forms/{form:uid}/done', [SubmitController::class, 'done'])
+        ->middleware('throttle:30,1')
         ->name('forms.done');
+
     Route::get('/forms/{form:uid}/review', [RespondentSectionController::class, 'review'])
+        ->middleware('throttle:30,1')
         ->name('forms.review');
 });
 // ====== Auth routes dari Breeze ======
