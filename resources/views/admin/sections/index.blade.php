@@ -13,7 +13,7 @@
                     <span>Kembali</span>
                 </a>
                 <a href="{{ route('admin.forms.sections.create', $form) }}"
-                    class="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-primary-600 to-primary-500 px-4 py-2 text-sm font-semibold text-white shadow-soft hover:shadow-soft-md transition-all">
+                    class="inline-flex items-center gap-2 rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary-700 transition">
                     <i class="bi bi-plus-lg"></i>
                     <span>Tambah Section</span>
                 </a>
@@ -47,7 +47,7 @@
                     <p class="text-sm text-secondary-600 mb-6">Sections membantu mengorganisir pertanyaan dalam form
                         Anda</p>
                     <a href="{{ route('admin.forms.sections.create', $form) }}"
-                        class="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-primary-600 to-primary-500 px-5 py-2.5 text-sm font-semibold text-white shadow-soft hover:shadow-soft-md transition-all">
+                        class="inline-flex items-center gap-2 rounded-lg bg-primary-600 px-5 py-2.5text-sm font-semibold text-white hover:bg-primary-700 transition">
                         <i class="bi bi-plus-lg"></i>
                         <span>Buat Section Pertama</span>
                     </a>
@@ -57,7 +57,7 @@
                 <div class="hidden md:block bg-white rounded-xl shadow-soft border border-primary-100 overflow-hidden">
                     <div class="overflow-x-auto">
                         <table class="min-w-full divide-y divide-primary-100">
-                            <thead class="bg-gradient-to-r from-primary-50 to-primary-100/50">
+                            <thead class="bg-primary-50">
                                 <tr>
                                     <th scope="col"
                                         class="py-3.5 pl-6 pr-3 text-left text-xs font-semibold text-secondary-900 uppercase tracking-wider">
@@ -84,7 +84,9 @@
                                     <tr class="hover:bg-primary-50/50 transition-colors">
                                         <td class="py-4 pl-6 pr-3">
                                             <span
-                                                class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-primary-500 to-primary-600 text-white text-sm font-semibold">
+                                                class="inline-flex items-center justify-center w-8 h-8
+           rounded-lg bg-primary-600 text-white
+           text-sm font-semibold">
                                                 {{ $loop->iteration }}
                                             </span>
                                         </td>
@@ -164,6 +166,18 @@
                                 @endforeach
                             </tbody>
                         </table>
+                        <div
+                            class="flex items-center justify-between px-6 py-4 border-t border-primary-100 bg-primary-50/50">
+                            <div class="flex items-center gap-2">
+                                <i class="bi bi-collection text-primary-600"></i>
+                                <span class="text-sm text-secondary-700">
+                                    Total <span
+                                        class="font-semibold text-secondary-900">{{ $sections->count() }}</span>
+                                    Section
+                                </span>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
 
@@ -175,7 +189,7 @@
                             <div class="flex items-start justify-between mb-3">
                                 <div class="flex items-center gap-3">
                                     <span
-                                        class="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-to-br from-primary-500 to-primary-600 text-white text-sm font-semibold">
+                                        class="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-primary-600 text-white text-sm font-semibold">
                                         {{ $loop->iteration }}
                                     </span>
                                     <div>
@@ -202,7 +216,7 @@
                                 </p>
                             @endif
 
-                            <div class="flex gap-2">
+                            <div class="flex gap-2 pt-3 border-t border-primary-100">
                                 <a href="{{ route('admin.sections.edit', $sec) }}"
                                     class="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg bg-primary-100 px-3 py-2 text-xs font-medium text-primary-700 hover:bg-primary-200 transition-colors">
                                     <i class="bi bi-pencil-square"></i>

@@ -47,41 +47,80 @@
         </div>
 
         <!-- Password -->
-        <div>
+        <!-- Password -->
+        <div x-data="{ show: false }">
             <x-input-label for="password" value="Password" class="text-secondary-700 font-medium mb-2" />
+
             <div class="relative">
+                {{-- Lock icon --}}
                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <i class="bi bi-lock text-secondary-400"></i>
                 </div>
-                <x-text-input id="password"
-                    class="block w-full pl-10 pr-3 py-3 border-secondary-200 rounded-lg focus:border-primary-500 focus:ring-primary-500 transition-colors"
-                    type="password" name="password" required autocomplete="new-password"
-                    placeholder="Minimal 8 karakter" />
+
+                {{-- Input --}}
+                <x-text-input id="password" x-ref="input" type="password" name="password" required
+                    autocomplete="new-password" placeholder="Minimal 8 karakter"
+                    class="block w-full pl-10 pr-12 py-3 rounded-lg
+                   border-secondary-300
+                   focus:border-primary-500 focus:ring-primary-500" />
+
+                {{-- Toggle --}}
+                <button type="button"
+                    @click="
+                show = !show;
+                $refs.input.type = show ? 'text' : 'password'
+            "
+                    class="absolute inset-y-0 right-0 pr-3 flex items-center
+                   text-secondary-500 hover:text-primary-600">
+
+                    <i class="bi" :class="show ? 'bi-eye-slash' : 'bi-eye'"></i>
+                </button>
             </div>
+
             <x-input-error :messages="$errors->get('password')" class="mt-2" />
         </div>
 
+
         <!-- Confirm Password -->
-        <div>
+        <div x-data="{ show: false }">
             <x-input-label for="password_confirmation" value="Konfirmasi Password"
                 class="text-secondary-700 font-medium mb-2" />
+
             <div class="relative">
                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <i class="bi bi-shield-check text-secondary-400"></i>
                 </div>
-                <x-text-input id="password_confirmation"
-                    class="block w-full pl-10 pr-3 py-3 border-secondary-200 rounded-lg focus:border-primary-500 focus:ring-primary-500 transition-colors"
-                    type="password" name="password_confirmation" required autocomplete="new-password"
-                    placeholder="Ulangi password Anda" />
+
+                <x-text-input id="password_confirmation" x-ref="input" type="password" name="password_confirmation"
+                    required autocomplete="new-password" placeholder="Ulangi password Anda"
+                    class="block w-full pl-10 pr-12 py-3 rounded-lg
+                   border-secondary-300
+                   focus:border-primary-500 focus:ring-primary-500" />
+
+                <button type="button"
+                    @click="
+                show = !show;
+                $refs.input.type = show ? 'text' : 'password'
+            "
+                    class="absolute inset-y-0 right-0 pr-3 flex items-center
+                   text-secondary-500 hover:text-primary-600">
+
+                    <i class="bi" :class="show ? 'bi-eye-slash' : 'bi-eye'"></i>
+                </button>
             </div>
+
             <x-input-error :messages="$errors->get('password_confirmation')" class="mt-2" />
         </div>
+
+
 
         {{-- Submit Button --}}
         <div class="space-y-4">
             <x-primary-button
-                class="w-full justify-center py-3 bg-gradient-to-r from-primary-600 to-accent-600 hover:from-primary-700 hover:to-accent-700 font-semibold shadow-soft hover:shadow-soft-lg transition-all duration-200">
-                <i class="bi bi-person-plus mr-2"></i>
+                class="w-full justify-center py-3
+                       bg-primary-600 hover:bg-primary-700
+                       font-semibold shadow-sm hover:shadow-md transition">
+                <i class="bi bi-box-arrow-in-right mr-2"></i>
                 Daftar Sekarang
             </x-primary-button>
 

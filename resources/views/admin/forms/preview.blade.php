@@ -1,32 +1,30 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-                <h2 class="font-bold text-2xl leading-tight text-gray-900">
-                    Preview Form
-                </h2>
-                <p class="mt-1 text-sm text-gray-600">
-                    {{ $form->title }}
-                </p>
-            </div>
-
-            <div class="flex items-center gap-3">
-                <span
-                    class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium
-                    {{ $form->is_published ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' : 'bg-yellow-100 text-yellow-800 border border-yellow-200' }}">
-                    <span
-                        class="w-2 h-2 rounded-full {{ $form->is_published ? 'bg-emerald-500' : 'bg-yellow-500' }}"></span>
-                    {{ $form->is_published ? 'Published' : 'Draft' }}
-                </span>
-
-                <a href="{{ route('admin.forms.edit', $form) }}"
-                    class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 transition-all duration-200">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                    </svg>
-                    Kembali ke Edit
-                </a>
+        <div class="space-y-4 animate-fade-in">
+            <div class="rounded-3xl bg-primary-600 text-white shadow-soft-lg">
+                <div class="p-6 lg:p-8 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+                    <div class="space-y-2">
+                        <p class="text-xs uppercase tracking-[0.3em] text-white/70 font-semibold">Preview Form</p>
+                        <h2 class="text-3xl font-bold leading-tight">{{ $form->title }}</h2>
+                        <p class="text-sm text-white/80 max-w-2xl">
+                            Tampilan read-only untuk memeriksa konten form sebelum dibagikan. Status pembaruan akan
+                            mengikuti form utama di halaman index.
+                        </p>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-3 justify-end">
+                        <span
+                            class="inline-flex items-center gap-2 rounded-full border border-white/30 px-3 py-1.5 text-xs font-semibold text-white/90">
+                            <span
+                                class="h-2 w-2 rounded-full {{ $form->is_published ? 'bg-success-300' : 'bg-warning-300' }}"></span>
+                            {{ $form->is_published ? 'Published' : 'Draft' }}
+                        </span>
+                        <a href="{{ route('admin.forms.edit', $form) }}"
+                            class="inline-flex items-center gap-2 rounded-2xl bg-white px-5 py-2.5 text-sm font-semibold text-primary-700 shadow-soft hover:shadow-soft-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-200 transition-all">
+                            <i class="bi bi-arrow-left"></i>
+                            Kembali ke Edit
+                        </a>
+                    </div>
+                </div>
             </div>
         </div>
     </x-slot>
@@ -48,15 +46,15 @@
     </style>
 
     @php
-        $card = 'rounded-lg border border-gray-200 bg-white shadow-sm';
+        $card = 'rounded-2xl border border-secondary-100 bg-white shadow-soft';
         $btn =
-            'inline-flex items-center rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:border-emerald-300 transition-all duration-200';
+            'inline-flex items-center gap-2 rounded-2xl border border-secondary-200 bg-white px-4 py-2 text-sm font-semibold text-secondary-700 hover:border-primary-300 hover:text-primary-700 transition-all';
         $chip =
-            'inline-flex items-center rounded-full px-3 py-1 text-xs font-medium bg-emerald-100 text-emerald-700 border border-emerald-200';
+            'inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold bg-secondary-100 text-secondary-700 border border-secondary-200';
         $input =
-            'w-full rounded-lg border-gray-300 shadow-sm text-gray-900 placeholder:text-gray-400 bg-white disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed focus:border-emerald-500 focus:ring-emerald-500 transition-colors duration-200';
-        $qlabel = 'block text-sm font-semibold text-gray-900';
-        $qdesc = 'mt-1.5 text-sm text-gray-600';
+            'w-full rounded-2xl border-secondary-200 bg-white px-4 py-3 text-sm text-secondary-900 placeholder:text-secondary-400 shadow-soft focus:border-primary-500 focus:ring-primary-500 disabled:bg-secondary-50 disabled:text-secondary-400 disabled:cursor-not-allowed transition-colors';
+        $qlabel = 'block text-sm font-semibold text-secondary-900';
+        $qdesc = 'mt-1.5 text-sm text-secondary-500';
     @endphp
 
     <div class="py-6 sm:py-8">
@@ -81,18 +79,18 @@
             {{-- Form Description --}}
             @if ($form->description)
                 <div class="{{ $card }}">
-                    <div class="bg-gradient-to-r from-emerald-50 to-teal-50 px-6 py-4 border-b border-gray-200">
+                    <div class="bg-primary-50 px-6 py-4 border-b border-secondary-100">
                         <div class="flex items-center gap-2">
-                            <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor"
+                            <svg class="w-5 h-5 text-primary-600" fill="none" stroke="currentColor"
                                 viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
-                            <h3 class="text-sm font-semibold text-gray-900">Deskripsi Form</h3>
+                            <h3 class="text-sm font-semibold text-secondary-900">Deskripsi Form</h3>
                         </div>
                     </div>
                     <div class="p-6">
-                        <div class="prose max-w-none text-gray-700 whitespace-pre-line leading-relaxed">
+                        <div class="prose max-w-none text-secondary-700 whitespace-pre-line leading-relaxed">
                             {{ $form->description }}
                         </div>
                     </div>
@@ -102,24 +100,25 @@
             {{-- Section Navigation --}}
             @if ($form->sections->isNotEmpty())
                 <div class="{{ $card }}">
-                    <div class="bg-gradient-to-r from-emerald-50 to-teal-50 px-6 py-4 border-b border-gray-200">
+                    <div class="bg-primary-50 px-6 py-4 border-b border-secondary-100">
                         <div class="flex items-center gap-2">
-                            <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor"
+                            <svg class="w-5 h-5 text-primary-600" fill="none" stroke="currentColor"
                                 viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M4 6h16M4 10h16M4 14h16M4 18h16" />
                             </svg>
-                            <h3 class="text-sm font-semibold text-gray-900">Navigasi Section</h3>
-                            <span class="ml-auto text-xs text-gray-500">{{ $form->sections->count() }} Section</span>
+                            <h3 class="text-sm font-semibold text-secondary-900">Navigasi Section</h3>
+                            <span class="ml-auto text-xs text-secondary-500">{{ $form->sections->count() }}
+                                Section</span>
                         </div>
                     </div>
                     <div class="p-4">
                         <div class="no-scrollbar flex gap-2 overflow-x-auto pb-2">
                             @foreach ($form->sections as $s)
                                 <a href="#sec-{{ $s->id }}"
-                                    class="flex-shrink-0 inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-emerald-50 hover:border-emerald-400 hover:text-emerald-700 transition-all duration-200">
+                                    class="flex-shrink-0 inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl border border-secondary-200 bg-white text-sm font-semibold text-secondary-700 hover:border-primary-300 hover:text-primary-700 hover:bg-primary-50 transition-all">
                                     <span
-                                        class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-gray-100 text-xs font-semibold text-gray-700">
+                                        class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-secondary-100 text-xs font-semibold text-secondary-700">
                                         {{ $s->position }}
                                     </span>
                                     <span class="whitespace-nowrap">{{ $s->title ?: 'Tanpa judul' }}</span>
@@ -134,20 +133,21 @@
             @forelse($form->sections as $sec)
                 <section id="sec-{{ $sec->id }}" class="{{ $card }} scroll-mt-24">
                     {{-- Section Header --}}
-                    <div class="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-5 border-b border-gray-200">
+                    <div class="bg-secondary-50 px-6 py-5 border-b border-secondary-100">
                         <div class="flex items-start justify-between gap-4">
                             <div class="flex-1">
                                 <div class="flex items-center gap-3">
                                     <span
-                                        class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-emerald-600 text-white text-sm font-bold">
+                                        class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-primary-600 text-white text-sm font-bold">
                                         {{ $sec->position }}
                                     </span>
-                                    <h3 class="text-lg font-bold text-gray-900">
+                                    <h3 class="text-lg font-bold text-secondary-900">
                                         {{ $sec->title ?? 'Section ' . $sec->position }}
                                     </h3>
                                 </div>
                                 @if ($sec->description)
-                                    <p class="mt-2 ml-11 text-sm text-gray-600 leading-relaxed">{{ $sec->description }}
+                                    <p class="mt-2 ml-11 text-sm text-secondary-500 leading-relaxed">
+                                        {{ $sec->description }}
                                     </p>
                                 @endif
                             </div>
@@ -158,10 +158,10 @@
                     </div>
 
                     {{-- Questions --}}
-                    <div class="p-6 space-y-8 bg-gray-50/30">
+                    <div class="p-6 space-y-8 bg-secondary-50/50">
                         @forelse($sec->questions as $qIndex => $q)
                             <div
-                                class="bg-white rounded-lg border border-gray-200 p-6 shadow-sm hover:shadow-md transition-shadow duration-200">
+                                class="bg-white rounded-2xl border border-secondary-100 p-6 shadow-soft hover:shadow-soft-md transition-shadow duration-200">
                                 {{-- Question Header --}}
                                 <div class="mb-4">
                                     <div class="flex items-start gap-3">
