@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <title>{{ config('app.name', 'Laravel') }}</title>
@@ -17,37 +17,18 @@
     <!-- Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
 
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    {{-- Alpine.js is loaded via Vite bundle (resources/js/app.js) --}}
+    {{-- DO NOT add Alpine CDN here - it causes double initialization --}}
 
-    <!-- Scripts -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
-
-    <style>
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar {
-            width: 10px;
-            height: 10px;
-        }
-
-        ::-webkit-scrollbar-track {
-            background: #f1f5f9;
-            border-radius: 5px;
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: #0284c7;
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background: #0369a1;
-        }
-    </style>
 </head>
 
-<body class="bg-primary-50">
+<body class="font-sans antialiased bg-primary-50">
+
+    {{-- Navbar --}}
     @include('layouts.navigation')
 
-    <!-- Page Heading -->
+    {{-- Header --}}
     @isset($header)
         <header class="bg-white shadow-sm border-b border-primary-100">
             <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
@@ -56,13 +37,13 @@
         </header>
     @endisset
 
-    <!-- Page Content -->
+    {{-- Content --}}
     <main class="pb-20">
         {{ $slot }}
     </main>
 
-    <!-- Footer -->
-    <footer class="bg-white border-t border-primary-100">
+    {{-- Footer --}}
+    <footer class="bg-white border-t border-primary-100 mt-12">
         <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
             <div class="flex flex-col md:flex-row items-center justify-between gap-4">
                 <p class="text-sm text-secondary-600">
@@ -82,6 +63,7 @@
             </div>
         </div>
     </footer>
+
 </body>
 
 </html>
