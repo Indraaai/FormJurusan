@@ -8,10 +8,8 @@
                 <!-- Logo -->
                 <div class="shrink-0 flex items-center">
                     <a href="{{ route('dashboard') }}" class="flex items-center gap-3 group">
-                        <div
-                            class="w-10 h-10 bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl flex items-center justify-center shadow-soft group-hover:shadow-soft-md transition-all duration-300 group-hover:scale-105">
-                            <i class="bi bi-clipboard-data text-white text-xl"></i>
-                        </div>
+                        <img src="{{ asset('images.jpg') }}" alt="Logo Unimal"
+                            class="w-10 h-10 object-contain rounded-lg shadow-soft group-hover:shadow-soft-md transition-all duration-300 group-hover:scale-105">
                         <div class="hidden sm:block">
                             <span class="font-bold text-lg text-secondary-900">
                                 FormApp

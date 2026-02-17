@@ -6,6 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Form Teknik Informatika - Universitas Malikussaleh</title>
 
+    <!-- Favicon -->
+    <link rel="icon" type="image/jpeg" href="{{ asset('images.jpg') }}">
+
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700&display=swap" rel="stylesheet" />
@@ -22,9 +25,8 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
 
             <div class="flex items-center gap-3">
-                <div class="w-10 h-10 bg-primary-600 rounded-xl flex items-center justify-center shadow-sm">
-                    <i class="bi bi-code-slash text-white text-xl"></i>
-                </div>
+                <img src="{{ asset('images.jpg') }}" alt="Logo Unimal"
+                    class="w-10 h-10 object-contain rounded-lg shadow-sm">
                 <div>
                     <h1 class="font-bold text-lg text-secondary-900">
                         Teknik Informatika

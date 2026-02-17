@@ -13,30 +13,26 @@
 
                         <div class="relative z-10 h-full flex flex-col justify-center">
                             <div class="mb-8">
-                                <div
-                                    class="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center mb-6">
-                                    <i class="bi bi-person-plus text-white text-3xl"></i>
+                                <div class="mb-6">
+                                    <img src="{{ asset('images.jpg') }}" alt="Logo Unimal"
+                                        class="w-25 h-20 rounded-full p-2 shadow-md">
                                 </div>
                                 <h2 class="text-3xl font-bold text-white mb-4">
-                                    Bergabung Bersama Kami! 🚀
+                                    Ayo Daftarkan Akun Mu Sekarang! 🚀
                                 </h2>
                                 <p class="text-primary-100 text-lg leading-relaxed">
-                                    Daftar sekarang dan mulai buat form profesional dengan mudah.
+                                    Daftar sekarang dan mulai isi form yang telah disediakan.
                                 </p>
                             </div>
 
                             <div class="space-y-4 mt-8">
                                 <div class="flex items-start gap-3 text-white/90">
                                     <i class="bi bi-check-circle-fill text-xl mt-0.5"></i>
-                                    <span>Gratis dan mudah digunakan</span>
+                                    <span>Cepat dan mudah digunakan</span>
                                 </div>
                                 <div class="flex items-start gap-3 text-white/90">
                                     <i class="bi bi-check-circle-fill text-xl mt-0.5"></i>
-                                    <span>Template form yang beragam</span>
-                                </div>
-                                <div class="flex items-start gap-3 text-white/90">
-                                    <i class="bi bi-check-circle-fill text-xl mt-0.5"></i>
-                                    <span>Analisis data otomatis</span>
+                                    <span>Dibuat khusus untuk kamu mahasiswa Teknik Informatika Unimal</span>
                                 </div>
                             </div>
                         </div>
@@ -47,10 +43,8 @@
                         <div class="max-w-md mx-auto">
                             {{-- Mobile Logo --}}
                             <div class="lg:hidden text-center mb-8">
-                                <div
-                                    class="w-16 h-16 bg-gradient-to-br from-primary-500 to-primary-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                                    <i class="bi bi-clipboard-data text-white text-2xl"></i>
-                                </div>
+                                <img src="{{ asset('images.jpg') }}" alt="Logo Unimal"
+                                    class="w-20 h-20 object-cover rounded-full mx-auto mb-4 shadow-md">
                             </div>
 
                             {{-- Header --}}

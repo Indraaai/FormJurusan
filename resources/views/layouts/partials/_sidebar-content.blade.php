@@ -8,7 +8,7 @@
     {{-- Brand --}}
     <div class="flex h-16 items-center gap-3 border-b border-emerald-100 px-4">
         <a href="{{ $isAdmin ? route('admin.home') : route('dashboard') }}" class="inline-flex items-center gap-2">
-            <x-application-logo class="h-8 w-auto fill-current text-emerald-700" />
+            <img src="{{ asset('images.jpg') }}" alt="Logo Unimal" class="h-8 w-8 object-contain">
             <div class="text-lg font-semibold text-emerald-900">{{ $brandTitle }}</div>
         </a>
     </div>

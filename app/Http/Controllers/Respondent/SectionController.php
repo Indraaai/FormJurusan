@@ -11,6 +11,7 @@ use App\Services\Forms\AnswerSaver;
 use App\Support\QuestionValidationRules;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class SectionController extends Controller
 {
@@ -26,7 +27,18 @@ class SectionController extends Controller
         // Eager load settings to prevent N+1 query
         $form->loadMissing('settings');
 
-        $this->guard->ensureFillable($form);
+        try {
+            $this->guard->ensureFillable($form);
+        } catch (HttpException $e) {
+            // Tangkap error 403 khusus untuk form yang sudah diisi
+            if ($e->getStatusCode() === 403 && str_contains($e->getMessage(), 'sudah mengisi form ini')) {
+                return redirect()
+                    ->route('respondent.forms.index')
+                    ->with('info', 'Kamu sudah mengisi form "' . $form->title . '". Form ini hanya bisa diisi satu kali.');
+            }
+            // Untuk error 403 lainnya, lempar ulang
+            throw $e;
+        }
 
         // Load all needed relations in one optimized query
         $form->load([
@@ -89,7 +101,18 @@ class SectionController extends Controller
         // Eager load settings to prevent N+1 query
         $form->loadMissing('settings');
 
-        $this->guard->ensureFillable($form);
+        try {
+            $this->guard->ensureFillable($form);
+        } catch (HttpException $e) {
+            // Tangkap error 403 khusus untuk form yang sudah diisi
+            if ($e->getStatusCode() === 403 && str_contains($e->getMessage(), 'sudah mengisi form ini')) {
+                return redirect()
+                    ->route('respondent.forms.index')
+                    ->with('info', 'Kamu sudah mengisi form "' . $form->title . '". Form ini hanya bisa diisi satu kali.');
+            }
+            // Untuk error 403 lainnya, lempar ulang
+            throw $e;
+        }
 
         $form->load([
             'sections' => fn($q) => $q->orderBy('position'),

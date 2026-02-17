@@ -26,6 +26,6 @@ class EmailDomain implements ValidationRule
             }
         }
 
-        $fail('Email harus menggunakan domain: @' . implode(', @', $this->allowedDomains) . '.');
+        $fail('Email harus menggunakan domain: @' . implode(', @', $this->allowedDomains));
     }
 }

@@ -1,17 +1,25 @@
 <x-app-layout>
     <x-slot name="header">
         <div class="flex items-center justify-between">
-            <h2 class="font-semibold text-xl leading-tight text-emerald-900">
-                Form Tersedia
-            </h2>
+            <div>
+                <h2 class="text-2xl font-bold text-secondary-900 leading-tight">
+                    Form Tersedia
+                </h2>
+                <p class="text-sm text-secondary-600 mt-1">
+                    Silakan pilih form yang ingin kamu isi.
+                </p>
+            </div>
 
-            {{-- Search (desktop) --}}
+            {{-- Search Desktop --}}
             <form method="GET" action="{{ route('respondent.forms.index') }}" class="hidden md:block">
                 <div class="flex items-center gap-2">
                     <input type="text" name="q" value="{{ request('q') }}" placeholder="Cari form…"
-                        class="w-64 rounded-xl border border-emerald-200 px-3 py-2 text-sm placeholder:text-emerald-900/40 focus-visible:ring-2 focus-visible:ring-emerald-300" />
+                        class="w-64 rounded-xl border border-secondary-300 bg-white px-4 py-2 text-sm
+                               placeholder:text-secondary-400
+                               focus:border-primary-500 focus:outline-none
+                               focus:ring-2 focus:ring-primary-200 transition" />
                     <button
-                        class="inline-flex items-center rounded-xl bg-emerald-600 px-3 py-2 text-sm text-white shadow-sm hover:bg-emerald-700">
+                        class="inline-flex items-center rounded-xl bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 transition">
                         Cari
                     </button>
                 </div>
@@ -23,28 +31,48 @@
         <div class="mx-auto max-w-5xl sm:px-6 lg:px-8">
 
             @if (session('status'))
-                <div class="mb-4 rounded-xl border border-emerald-200 bg-emerald-50/70 p-3 text-emerald-900">
+                <div class="mb-4 rounded-xl border border-success-200 bg-success-50 p-4 text-success-800">
                     {{ session('status') }}
                 </div>
             @endif
 
-            <div class="rounded-2xl border border-emerald-100 bg-white p-6 shadow-sm">
-                {{-- Search (mobile) --}}
-                <form method="GET" action="{{ route('respondent.forms.index') }}" class="mb-4 md:hidden">
+            @if (session('info'))
+                <div class="mb-4 rounded-xl border border-primary-200 bg-primary-50 p-4 text-primary-800">
+                    <div class="flex items-start gap-3">
+                        <svg class="h-5 w-5 flex-shrink-0 text-primary-600 mt-0.5" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span>{{ session('info') }}</span>
+                    </div>
+                </div>
+            @endif
+
+            <div class="rounded-2xl border border-primary-100 bg-white p-6 shadow-soft">
+
+                {{-- Search Mobile --}}
+                <form method="GET" action="{{ route('respondent.forms.index') }}" class="mb-6 md:hidden">
                     <div class="flex items-center gap-2">
                         <input type="text" name="q" value="{{ request('q') }}" placeholder="Cari form…"
-                            class="w-full rounded-xl border border-emerald-200 px-3 py-2 text-sm placeholder:text-emerald-900/40 focus-visible:ring-2 focus-visible:ring-emerald-300" />
+                            class="w-full rounded-xl border border-secondary-300 bg-white px-4 py-2 text-sm
+                                   placeholder:text-secondary-400
+                                   focus:border-primary-500 focus:outline-none
+                                   focus:ring-2 focus:ring-primary-200 transition" />
                         <button
-                            class="inline-flex items-center rounded-xl bg-emerald-600 px-3 py-2 text-sm text-white shadow-sm hover:bg-emerald-700">
+                            class="inline-flex items-center rounded-xl bg-primary-600 px-4 py-2 text-sm text-white hover:bg-primary-700 transition">
                             Cari
                         </button>
                     </div>
                 </form>
 
                 @if ($forms->isEmpty())
-                    <p class="text-emerald-800/70">Belum ada form yang tersedia untuk diisi.</p>
+                    <p class="text-secondary-600">
+                        Belum ada form yang tersedia untuk diisi.
+                    </p>
                 @else
                     <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+
                         @foreach ($forms as $form)
                             @php
                                 $settings = (object) ($form->settings ?? []);
@@ -72,99 +100,100 @@
                                 }
 
                                 $desc = \Illuminate\Support\Str::limit($form->description ?? '', 150);
-
-                                // window aktif (opsional) — terima string atau Carbon
-                                $startRaw = $settings->start_at ?? null;
-                                $endRaw = $settings->end_at ?? null;
-                                $startAt = $startRaw ? \Carbon\Carbon::parse($startRaw) : null;
-                                $endAt = $endRaw ? \Carbon\Carbon::parse($endRaw) : null;
-
                                 $isPublished = (bool) ($form->is_published ?? 0);
                             @endphp
 
                             <div
-                                class="group rounded-2xl border border-emerald-100 bg-white p-5 shadow-sm transition hover:shadow-md">
+                                class="group rounded-2xl border border-primary-100 bg-white p-6 shadow-soft transition hover:shadow-md">
+
+                                {{-- ALERT jika sudah submit --}}
+                                @if ($hasSubmitted)
+                                    <div
+                                        class="mb-4 rounded-xl border border-success-200 bg-success-50 p-3 text-sm text-success-800">
+                                        Form ini sudah kamu isi sebelumnya.
+                                    </div>
+                                @endif
+
                                 <div class="flex items-start justify-between gap-4">
                                     <div class="min-w-0">
                                         <div class="flex flex-wrap items-center gap-2">
-                                            <h3 class="truncate text-lg font-semibold text-emerald-900">
-                                                {{ $form->title }}</h3>
+                                            <h3 class="truncate text-lg font-semibold text-secondary-900">
+                                                {{ $form->title }}
+                                            </h3>
+
                                             @if ($isPublished)
                                                 <span
-                                                    class="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-1 text-xs text-emerald-800">Published</span>
+                                                    class="inline-flex items-center rounded-full bg-primary-50 px-3 py-1 text-xs font-medium text-primary-700">
+                                                    Published
+                                                </span>
                                             @endif
+
                                             @if ($limitOne)
                                                 <span
-                                                    class="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-1 text-xs text-emerald-800">1x
-                                                    respons</span>
+                                                    class="inline-flex items-center rounded-full bg-secondary-100 px-3 py-1 text-xs font-medium text-secondary-700">
+                                                    1x respons
+                                                </span>
                                             @endif
+
                                             @if ($canEditAfterSubmit)
                                                 <span
-                                                    class="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-1 text-xs text-emerald-800">Bisa
-                                                    edit</span>
+                                                    class="inline-flex items-center rounded-full bg-warning-100 px-3 py-1 text-xs font-medium text-warning-700">
+                                                    Bisa edit
+                                                </span>
                                             @endif
                                         </div>
 
                                         @if ($desc)
-                                            <p class="mt-1 line-clamp-3 text-sm text-emerald-800/80">{{ $desc }}
+                                            <p class="mt-2 text-sm text-secondary-600 line-clamp-3">
+                                                {{ $desc }}
                                             </p>
-                                        @endif
-
-                                        @if ($startAt || $endAt)
-                                            <div class="mt-2 text-xs text-emerald-700/70">
-                                                @if ($startAt)
-                                                    Mulai: {{ $startAt->format('Y-m-d H:i') }}
-                                                @endif
-                                                @if ($startAt && $endAt)
-                                                    •
-                                                @endif
-                                                @if ($endAt)
-                                                    Tutup: {{ $endAt->format('Y-m-d H:i') }}
-                                                @endif
-                                            </div>
                                         @endif
                                     </div>
 
-                                    <div class="text-right">
+                                    <div class="text-right text-xs text-secondary-500">
                                         @if ($hasSubmitted)
-                                            <div class="text-xs text-emerald-700/80">Submitted: {{ $submittedCount }}
-                                            </div>
+                                            <div>Submitted: {{ $submittedCount }}</div>
                                         @endif
                                         @if ($hasDraft)
-                                            <div class="text-xs text-emerald-700/80">Draft: {{ $draftCount }}</div>
+                                            <div>Draft: {{ $draftCount }}</div>
                                         @endif
                                     </div>
                                 </div>
 
-                                <div class="mt-4 flex items-center gap-2">
+                                {{-- CTA --}}
+                                <div class="mt-6 flex items-center gap-3">
+
                                     @if ($ctaRoute)
                                         <a href="{{ $ctaRoute }}"
-                                            class="inline-flex items-center rounded-xl bg-emerald-600 px-3 py-2 text-sm text-white shadow-sm hover:bg-emerald-700">
+                                            class="inline-flex items-center rounded-xl bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 transition">
                                             {{ $ctaLabel }}
                                         </a>
                                     @else
                                         <span
-                                            class="inline-flex items-center rounded-xl bg-emerald-50 px-3 py-2 text-sm text-emerald-400 ring-1 ring-emerald-100 cursor-not-allowed">
+                                            class="inline-flex items-center rounded-xl bg-secondary-100 px-4 py-2 text-sm text-secondary-500 cursor-not-allowed">
                                             {{ $ctaLabel }}
                                         </span>
                                     @endif
 
                                     <a href="{{ route('forms.start', $form->uid) }}"
-                                        class="inline-flex items-center rounded-xl border border-emerald-200 bg-white px-3 py-2 text-sm text-emerald-800 hover:bg-emerald-50">
+                                        class="inline-flex items-center rounded-xl border border-secondary-300 bg-white px-4 py-2 text-sm font-medium text-secondary-700 hover:bg-secondary-50 transition">
                                         Lihat
                                     </a>
+
                                 </div>
                             </div>
                         @endforeach
+
                     </div>
 
-                    {{-- tampilkan pagination hanya jika tersedia --}}
                     @if (method_exists($forms, 'links'))
-                        <div class="mt-6">
+                        <div class="mt-8">
                             {{ $forms->links() }}
                         </div>
                     @endif
+
                 @endif
+
             </div>
         </div>
     </div>
